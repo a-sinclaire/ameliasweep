@@ -9,7 +9,12 @@ import numpy as np
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 
-# random.seed(69)
+# TODO:
+# Win condition
+# timer
+# record num wins and losses
+# look up correct mine ratio
+# add title screen that sets map difficulty
 
 class Format:
     RESET = '\033[0m'
@@ -45,6 +50,11 @@ class Format:
     MAROON = '\033[38;5;124m'
     NAVY ='\033[38;5;21m'
 
+
+class GameState(Enum):
+    PLAYING = 0
+    WON = 1
+    LOST = 2
 
 class Cell(Enum):
     BLANK = 0
@@ -98,12 +108,23 @@ class Board:
         self.height = height
         self.mine_ratio = mine_ratio
 
-        self.real_board = np.full((self.width, self.height), Cell.BLANK)
         # self.real_board = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
         #               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
         #               [Cell.FIVE, Cell.SIX, Cell.SEVEN, Cell.EIGHT]]
+        self.real_board = np.full((self.width, self.height), Cell.BLANK)
         self.my_board = np.full((self.width, self.height), Cell.UNOPENED)
         self.cursor = (0, 0)
+        self.death = (-1, -1)
+        self.state = GameState.PLAYING
+        self.is_first_click = True
+
+    def reset(self):
+        self.real_board = np.full((self.width, self.height), Cell.BLANK)
+        self.my_board = np.full((self.width, self.height), Cell.UNOPENED)
+        self.cursor = (0, 0)
+        self.death = (-1, -1)
+        self.state = GameState.PLAYING
+        self.is_first_click = True
 
     def populate(self):
         x = self.cursor[0]
@@ -138,7 +159,13 @@ class Board:
         if 0 <= new_x < self.width and 0 <= new_y < self.height:
             self.cursor = (new_x, new_y)
 
+    def reveal_all(self) -> None:
+        self.my_board = np.full((self.width, self.height), Cell.OPENED)
+
     def reveal(self, x: int = None, y: int = None) -> None:
+        if self.is_first_click:
+            self.populate()
+            self.is_first_click = False
         x = self.cursor[0] if x is None else x
         y = self.cursor[1] if y is None else y
         if y < 0 or y >= self.height or x < 0 or x >= self.width:
@@ -159,8 +186,9 @@ class Board:
             self.reveal(x + 1, y + 1)
             return
         if self.real_board[y][x] == Cell.MINE:
-            self.my_board[y][x] = Cell.OPENED
-            print('YOU LOSE')  # TODO
+            self.reveal_all()
+            self.death = (x, y)
+            self.state = GameState.LOST
             return
         self.my_board[y][x] = Cell.OPENED
         return
@@ -175,16 +203,30 @@ class Board:
 
     def __str__(self):
         selector_format = f'{Format.BRIGHT_YELLOW}{Format.BOLD}{Format.BLINKING}'
+        death_format = f'{Format.BRIGHT_RED}{Format.BOLD}{Format.BLINKING}'
         output = '\033[0;0H'  # draw at 0, 0
-        for rid, row in enumerate(self.my_board):
-            for cid, cell in enumerate(row):
-                if cell == Cell.OPENED:
-                    cell = self.real_board[rid][cid]
-                if self.cursor[0] == cid and self.cursor[1] == rid:
-                    output += f'{selector_format}[{Format.RESET}{str(cell)}{selector_format}]{Format.RESET} '
-                else:
-                    output += f'[{str(cell)}] '
-            output += '\n'
+        match self.state:
+            case GameState.PLAYING:
+                for rid, row in enumerate(self.my_board):
+                    for cid, cell in enumerate(row):
+                        if cell == Cell.OPENED:
+                            cell = self.real_board[rid][cid]
+                        if self.cursor[0] == cid and self.cursor[1] == rid:
+                            output += f'{selector_format}[{Format.RESET}{str(cell)}{selector_format}]{Format.RESET}'
+                        else:
+                            output += f'[{str(cell)}]'
+                    output += '\n'
+            case GameState.LOST:
+                for rid, row in enumerate(self.my_board):
+                    for cid, cell in enumerate(row):
+                        if cell == Cell.OPENED:
+                            cell = self.real_board[rid][cid]
+                        if self.death[0] == cid and self.death[1] == rid:
+                            output += f'{death_format}[{Format.RESET}{str(cell)}{death_format}]{Format.RESET}'
+                        else:
+                            output += f'[{str(cell)}]'
+                    output += '\n'
+                output += 'Press "R" to restart'
         return output
 
 
@@ -211,7 +253,6 @@ def main():
     cls()
     print(board)
 
-    is_first_click = True
     with keyboard.Events() as events:
         for event in events:
             if event.key == Key.esc:
@@ -233,15 +274,16 @@ def main():
                 board.move_cursor(0, +1)
                 print(board)
             elif event.key == Key.space and isinstance(event, keyboard.Events.Release):
-                if is_first_click:
-                    board.populate()
-                    is_first_click = False
                 cls()
                 board.reveal()
                 print(board)
             elif event.key == KeyCode.from_char('f') and isinstance(event, keyboard.Events.Release):
                 cls()
                 board.flag()
+                print(board)
+            elif event.key == KeyCode.from_char('r') and isinstance(event, keyboard.Events.Release) and board.state == GameState.LOST:
+                cls()
+                board.reset()
                 print(board)
 
 
