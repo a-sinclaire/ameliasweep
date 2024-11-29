@@ -1,10 +1,8 @@
 # Amelia Sinclaire 2024
 import argparse
 import curses
-from curses import wrapper
 from enum import Enum
 import itertools
-import os
 import random
 
 import numpy as np
@@ -21,6 +19,7 @@ class GameState(Enum):
     WON = 1
     LOST = 2
 
+
 class Cell(Enum):
     BLANK = 0
     ONE = 1  # BLUE
@@ -36,6 +35,26 @@ class Cell(Enum):
     QUESTION = 11
     UNOPENED = 12
     OPENED = 13
+
+    def display(self, stdscr, format=None):
+        match self:
+            case self.BLANK:
+                stdscr.addstr(' ')
+            case self.MINE:
+                stdscr.addstr('¤')
+            case self.FLAG:
+                if format is None:
+                    stdscr.addstr('¶')
+                else:
+                    stdscr.addstr('¶', format)
+            case self.QUESTION:
+                stdscr.addstr('?')
+            case self.UNOPENED:
+                stdscr.addstr('■')
+            case _:
+                stdscr.addstr(f'{self.value}', curses.color_pair(int(self.value)))
+            # case _:
+            #     stdscr.addstr(f'{self.value}')
 
     def __str__(self) -> str:
         match self:
@@ -54,13 +73,11 @@ class Cell(Enum):
 
 
 class Board:
-    def __init__(self, width: int, height: int, mine_ratio: float, stdscr: curses.window) -> None:
+    def __init__(self, width: int, height: int, mine_ratio: float) -> None:
         self.width = width
         self.height = height
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
-
-        self.stdscr = stdscr
 
         # self.real_board = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
         #               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
@@ -158,7 +175,7 @@ class Board:
             self.my_board[self.cursor[1]][self.cursor[0]] = Cell.UNOPENED
             return
 
-    def display(self):
+    def display(self, stdscr: curses.window) -> None:
         selector_format = curses.A_BLINK | curses.color_pair(227) | curses.A_BOLD
         death_format = curses.A_BLINK | curses.color_pair(10) | curses.A_BOLD
         win_format = curses.A_BLINK | curses.color_pair(11) | curses.A_BOLD
@@ -169,87 +186,51 @@ class Board:
                         if cell == Cell.OPENED:
                             cell = self.real_board[rid][cid]
                         if self.cursor[0] == cid and self.cursor[1] == rid:
-                            self.stdscr.addstr('[', selector_format)
-                            self.stdscr.addstr(f'{str(cell)}')  # TODO color numbers
-                            self.stdscr.addstr(']', selector_format)
+                            stdscr.addstr('[', selector_format)
+                            cell.display(stdscr)
+                            stdscr.addstr(']', selector_format)
                         else:
-                            self.stdscr.addstr(f'[{str(cell)}]')  # TODO color numbers
-                    self.stdscr.addstr('\n')
-                self.stdscr.addstr('Use arrow keys to move\n')
-                self.stdscr.addstr('Press "F" to flag and "Space" to reveal')
+                            stdscr.addstr('[')
+                            cell.display(stdscr)
+                            stdscr.addstr(']')
+                    stdscr.addstr('\n')
+                stdscr.addstr('Use arrow keys to move\n')
+                stdscr.addstr('Press "F" to flag and "Space" to reveal')
             case GameState.LOST:
                 for rid, row in enumerate(self.my_board):
                     for cid, cell in enumerate(row):
                         if cell == Cell.OPENED:
                             cell = self.real_board[rid][cid]
                         if self.death[0] == cid and self.death[1] == rid:
-                            self.stdscr.addstr('[', death_format)
-                            self.stdscr.addstr(f'{str(cell)}')  # TODO color numbers
-                            self.stdscr.addstr(']', death_format)
+                            stdscr.addstr('[', death_format)
+                            cell.display(stdscr)
+                            stdscr.addstr(']', death_format)
                         else:
-                            self.stdscr.addstr(f'[{str(cell)}]')  # TODO color numbers
-                    self.stdscr.addstr('\n')
-                self.stdscr.addstr('You Lose!\n')
-                self.stdscr.addstr('Press "R" to restart')
+                            stdscr.addstr('[')
+                            cell.display(stdscr)
+                            stdscr.addstr(']')
+                    stdscr.addstr('\n')
+                stdscr.addstr('You Lose!\n')
+                stdscr.addstr('Press "R" to restart')
             case GameState.WON:
                 for rid, row in enumerate(self.my_board):
                     for cid, cell in enumerate(row):
                         if cell == Cell.OPENED:
                             cell = self.real_board[rid][cid]
                         if cell == Cell.FLAG:
-                            self.stdscr.addstr(f'[{str(cell)}]', win_format)  # TODO: winflag format
+                            stdscr.addstr('[', win_format)
+                            cell.display(stdscr, win_format)
+                            stdscr.addstr(']', win_format)
                         else:
-                            self.stdscr.addstr(f'[{str(cell)}]')  # TODO color numbers
-                    self.stdscr.addstr('\n')
-                self.stdscr.addstr('You Win!\n')
-                self.stdscr.addstr('Press "R" to restart')
-
-    def __str__(self) -> str:
-        # selector_format = f'{Format.BRIGHT_YELLOW}{Format.BOLD}{Format.BLINKING}'
-        # death_format = f'{Format.BRIGHT_RED}{Format.BOLD}{Format.BLINKING}'
-        # win_flag_format = f'{Format.BRIGHT_GREEN}{Format.BOLD}{Format.BLINKING}'
-        output = ''
-        match self.state:
-            case GameState.PLAYING:
-                for rid, row in enumerate(self.my_board):
-                    for cid, cell in enumerate(row):
-                        if cell == Cell.OPENED:
-                            cell = self.real_board[rid][cid]
-                        if self.cursor[0] == cid and self.cursor[1] == rid:
-                            output += f'[{str(cell)}]'  # TODO: selector format
-                        else:
-                            output += f'[{str(cell)}]'
-                    output += '\n'
-                output += 'Use arrow keys to move\n'
-                output += 'Press "F" to flag and "Space" to reveal'
-            case GameState.LOST:
-                for rid, row in enumerate(self.my_board):
-                    for cid, cell in enumerate(row):
-                        if cell == Cell.OPENED:
-                            cell = self.real_board[rid][cid]
-                        if self.death[0] == cid and self.death[1] == rid:
-                            output += f'[{str(cell)}]'  # TODO: death format
-                        else:
-                            output += f'[{str(cell)}]'
-                    output += '\n'
-                output += 'You Lose!\n'
-                output += 'Press "R" to restart'
-            case GameState.WON:
-                for rid, row in enumerate(self.my_board):
-                    for cid, cell in enumerate(row):
-                        if cell == Cell.OPENED:
-                            cell = self.real_board[rid][cid]
-                        if cell == Cell.FLAG:
-                            output += f'[{str(cell)}]'  # TODO: winflag format
-                        else:
-                            output += f'[{str(cell)}]'
-                    output += '\n'
-                output += 'You Win!\n'
-                output += 'Press "R" to restart'
-        return output
+                            stdscr.addstr('[')
+                            cell.display(stdscr)
+                            stdscr.addstr(']')
+                    stdscr.addstr('\n')
+                stdscr.addstr('You Win!\n')
+                stdscr.addstr('Press "R" to restart')
 
 
-def main() -> None:
+def main(stdscr) -> None:
     min_width = 1
     min_height = 1
     default_width = 5
@@ -264,19 +245,31 @@ def main() -> None:
     if args.height <= 0:
         raise Exception(f'Invalid height: {args.height}. Must be >= {min_height}')
 
-    stdscr = curses.initscr()
+    # stdscr = curses.initscr()
     curses.start_color()
     curses.use_default_colors()
     for i in range(0, curses.COLORS):
         curses.init_pair(i + 1, i, -1)
+    if curses.can_change_color():
+        # curses.init_color(1, 0, 0, 1000)
+        curses.init_pair(1, curses.COLOR_BLUE, -1)
+        # curses.init_color(2, 0, 1000, 0)
+        curses.init_pair(2, curses.COLOR_GREEN, -1)
+        # curses.init_color(3, 1000, 0, 0)
+        curses.init_pair(3, curses.COLOR_RED, -1)
+        curses.init_pair(4, curses.COLOR_YELLOW, -1)
+        curses.init_pair(5, curses.COLOR_MAGENTA, -1)
+        curses.init_pair(6, curses.COLOR_CYAN, -1)
+        curses.init_pair(7, curses.COLOR_BLACK, -1)
+        curses.init_pair(8, curses.COLOR_WHITE, -1)
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
     curses.curs_set(0)
 
-    board = Board(args.width, args.height, 0.15, stdscr)
+    board = Board(args.width, args.height, 0.15)
     stdscr.clear()
-    board.display()
+    board.display(stdscr)
 
     while True:
         key = stdscr.getkey(0, 0)
@@ -299,7 +292,7 @@ def main() -> None:
                 if board.state != GameState.PLAYING:
                     board.reset()
         stdscr.clear()
-        board.display()
+        board.display(stdscr)
         stdscr.refresh()
     curses.nocbreak()
     stdscr.keypad(False)
@@ -308,5 +301,6 @@ def main() -> None:
     curses.endwin()
     exit()
 
-if __name__=='__main__':
-    wrapper(main())
+
+if __name__ == '__main__':
+    curses.wrapper(main)
