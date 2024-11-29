@@ -1,8 +1,10 @@
 # Amelia Sinclaire 2024
 import argparse
+import itertools
 import os
 import random
 from enum import Enum, StrEnum
+from itertools import combinations
 from typing import Self
 
 import numpy as np
@@ -15,6 +17,7 @@ from pynput.keyboard import Key, KeyCode
 # record num wins and losses
 # look up correct mine ratio
 # add title screen that sets map difficulty
+# move formating into seperate file(?)
 
 class Format:
     RESET = '\033[0m'
@@ -49,6 +52,7 @@ class Format:
 
     MAROON = '\033[38;5;124m'
     NAVY ='\033[38;5;21m'
+    GRAY = '\033[38;5;237m'
 
 
 class GameState(Enum):
@@ -96,6 +100,8 @@ class Cell(Enum):
                 return f'{Format.BOLD}{Format.BRIGHT_CYAN}{self.value}{Format.RESET}'
             case self.SEVEN:
                 return f'{Format.BOLD}{Format.BLACK}{self.value}{Format.RESET}'
+            case self.EIGHT:
+                return f'{Format.BOLD}{Format.GRAY}{self.value}{Format.RESET}'
             case self.UNOPENED:
                 return f'■'
             case _:
@@ -133,12 +139,11 @@ class Board:
             raise Exception(f'Click at ({x}, {y}) is out of bounds.')
 
         n_mines = round(self.width * self.height * self.mine_ratio)
-        while n_mines > 0:
-            r = random.randint(0, self.height - 1)
-            c = random.randint(0, self.width - 1)
-            if self.real_board[r][c] != Cell.MINE and not (r==y and x==c):
-                self.real_board[r][c] = Cell.MINE
-                n_mines -= 1
+        locations = list(itertools.product(range(0, self.width), range(0, self.height)))
+        locations.remove(self.cursor)
+        mines = random.choices(locations, k=n_mines)
+        for m in mines:
+                self.real_board[m[1]][m[0]] = Cell.MINE
 
         for rid, row in enumerate(self.real_board):
             for cid, cell in enumerate(row):
