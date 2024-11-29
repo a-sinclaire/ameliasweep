@@ -1,23 +1,20 @@
 # Amelia Sinclaire 2024
 import argparse
+from enum import Enum
 import itertools
 import os
 import random
-from enum import Enum, StrEnum
-from itertools import combinations
-from typing import Self
 
 import numpy as np
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 
 # TODO:
-# Win condition
 # timer
 # record num wins and losses
 # look up correct mine ratio
 # add title screen that sets map difficulty
-# move formating into seperate file(?)
+# move formating into separate file(?)
 
 class Format:
     RESET = '\033[0m'
@@ -76,7 +73,7 @@ class Cell(Enum):
     UNOPENED = 12
     OPENED = 13
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.BLANK:
                 return ' '
@@ -113,6 +110,7 @@ class Board:
         self.width = width
         self.height = height
         self.mine_ratio = mine_ratio
+        self.n_mines = round(self.width * self.height * self.mine_ratio)
 
         # self.real_board = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
         #               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
@@ -124,7 +122,7 @@ class Board:
         self.state = GameState.PLAYING
         self.is_first_click = True
 
-    def reset(self):
+    def reset(self) -> None:
         self.real_board = np.full((self.width, self.height), Cell.BLANK)
         self.my_board = np.full((self.width, self.height), Cell.UNOPENED)
         self.cursor = (0, 0)
@@ -132,18 +130,12 @@ class Board:
         self.state = GameState.PLAYING
         self.is_first_click = True
 
-    def populate(self):
-        x = self.cursor[0]
-        y = self.cursor[1]
-        if y < 0 or y >= self.height or x < 0 or x >= self.width:
-            raise Exception(f'Click at ({x}, {y}) is out of bounds.')
-
-        n_mines = round(self.width * self.height * self.mine_ratio)
+    def populate(self) -> None:
         locations = list(itertools.product(range(0, self.width), range(0, self.height)))
         locations.remove(self.cursor)
-        mines = random.choices(locations, k=n_mines)
+        mines = random.choices(locations, k=self.n_mines)
         for m in mines:
-                self.real_board[m[1]][m[0]] = Cell.MINE
+            self.real_board[m[1]][m[0]] = Cell.MINE
 
         for rid, row in enumerate(self.real_board):
             for cid, cell in enumerate(row):
@@ -196,7 +188,17 @@ class Board:
             self.state = GameState.LOST
             return
         self.my_board[y][x] = Cell.OPENED
+        self.check_win()
         return
+
+    def check_win(self) -> None:
+        won = sum(list(x).count(Cell.UNOPENED) + list(x).count(Cell.FLAG) for x in self.my_board) == self.n_mines
+        if won:
+            self.state = GameState.WON
+            for rid, row in enumerate(self.my_board):
+                for cid, cell in enumerate(row):
+                    if cell == Cell.UNOPENED:
+                        self.my_board[rid][cid] = Cell.FLAG
 
     def flag(self) -> None:
         if self.my_board[self.cursor[1]][self.cursor[0]] == Cell.UNOPENED:
@@ -206,9 +208,10 @@ class Board:
             self.my_board[self.cursor[1]][self.cursor[0]] = Cell.UNOPENED
             return
 
-    def __str__(self):
+    def __str__(self) -> str:
         selector_format = f'{Format.BRIGHT_YELLOW}{Format.BOLD}{Format.BLINKING}'
         death_format = f'{Format.BRIGHT_RED}{Format.BOLD}{Format.BLINKING}'
+        win_flag_format = f'{Format.BRIGHT_GREEN}{Format.BOLD}{Format.BLINKING}'
         output = '\033[0;0H'  # draw at 0, 0
         match self.state:
             case GameState.PLAYING:
@@ -221,6 +224,8 @@ class Board:
                         else:
                             output += f'[{str(cell)}]'
                     output += '\n'
+                output += 'Use arrow keys to move\n'
+                output += 'Press "F" to flag and "Space" to reveal'
             case GameState.LOST:
                 for rid, row in enumerate(self.my_board):
                     for cid, cell in enumerate(row):
@@ -231,15 +236,28 @@ class Board:
                         else:
                             output += f'[{str(cell)}]'
                     output += '\n'
+                output += 'You Lose!\n'
+                output += 'Press "R" to restart'
+            case GameState.WON:
+                for rid, row in enumerate(self.my_board):
+                    for cid, cell in enumerate(row):
+                        if cell == Cell.OPENED:
+                            cell = self.real_board[rid][cid]
+                        if cell == Cell.FLAG:
+                            output += f'[{win_flag_format}{str(cell)}{Format.RESET}]'
+                        else:
+                            output += f'[{str(cell)}]'
+                    output += '\n'
+                output += 'You Win!\n'
                 output += 'Press "R" to restart'
         return output
 
 
-def cls():
+def cls() -> None:
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def main():
+def main() -> None:
     min_width = 1
     min_height = 1
     default_width = 5
@@ -286,7 +304,7 @@ def main():
                 cls()
                 board.flag()
                 print(board)
-            elif event.key == KeyCode.from_char('r') and isinstance(event, keyboard.Events.Release) and board.state == GameState.LOST:
+            elif event.key == KeyCode.from_char('r') and isinstance(event, keyboard.Events.Release) and board.state != GameState.PLAYING:
                 cls()
                 board.reset()
                 print(board)
