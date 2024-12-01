@@ -41,7 +41,7 @@ class Cell(Enum):
     UNOPENED = 11
     OPENED = 12
 
-    def display(self, stdscr: curses.window, symbols: {str: str}, display_format=None):
+    def display(self, stdscr: curses.window, symbols: {str: str}, display_format=None) -> None:
         if self == self.FLAG and display_format:
             stdscr.addstr(symbols[self.name], display_format)
         elif self.ONE.value <= self.value <= self.EIGHT.value:
@@ -115,7 +115,7 @@ class Board:
                 total += 1 if self.real_board[loc[0]][loc[1]] == Cell.MINE else 0
         return total
 
-    def set_cursor(self, x: int, y: int) -> None:
+    def set_cursor_from_mouse(self, x: int, y: int) -> None:
         # x and y are screen coordinates
         new_row = y - 2  # two for timer and win/loss counts
         new_col = (x // 3)  # to account for [ ] style
@@ -172,16 +172,7 @@ class Board:
             return
 
         if self.real_board[row][col] == Cell.MINE:
-            self.reveal_all()
-            self.death = self.cursor
-            self.state = GameState.LOST
-            self.end_time = datetime.datetime.now()
-            self.n_games += 1
-            if not self.no_flash:
-                curses.flash()
-                time.sleep(0.1)
-                curses.flash()
-                curses.flash()
+            self.lose()
             return
 
         if self.real_board[row][col] == Cell.BLANK:
@@ -191,23 +182,36 @@ class Board:
             for n in Board.neighbors:
                 self.cursor = [sum(x) for x in zip((row, col), n)]
                 self.reveal()
-                self.check_win()
             self.cursor = temp
-            return
-
-        self.my_board[row][col] = Cell.OPENED
+        else:
+            self.my_board[row][col] = Cell.OPENED
         self.check_win()
         return
+
+    def lose(self) -> None:
+        self.reveal_all()
+        self.death = self.cursor
+        self.state = GameState.LOST
+        self.end_time = datetime.datetime.now()
+        self.n_games += 1
+        if not self.no_flash:
+            curses.flash()
+            time.sleep(0.1)
+            curses.flash()
+            curses.flash()
+
+    def won(self) -> None:
+        self.state = GameState.WON
+        self.end_time = datetime.datetime.now()
+        self.n_wins += 1
+        self.n_games += 1
+        for m in self.mines:
+            self.my_board[m[0]][m[1]] = Cell.FLAG
 
     def check_win(self) -> None:
         won = sum(x.count(Cell.UNOPENED) + x.count(Cell.FLAG) for x in self.my_board) == self.n_mines
         if won:
-            self.state = GameState.WON
-            self.end_time = datetime.datetime.now()
-            self.n_wins += 1
-            self.n_games += 1
-            for m in self.mines:
-                self.my_board[m[0]][m[1]] = Cell.FLAG
+            self.won()
 
     def flag(self) -> None:
         row, col = self.cursor
@@ -384,10 +388,10 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 elif mouse['down'] and (bstate & getattr(curses, mouse['down'])):
                     board.down()
                 elif mouse['reveal'] and (bstate & getattr(curses, mouse['reveal'])):
-                    board.set_cursor(mx, my)
+                    board.set_cursor_from_mouse(mx, my)
                     board.reveal()
                 elif mouse['flag'] and (bstate & getattr(curses, mouse['flag'])):
-                    board.set_cursor(mx, my)
+                    board.set_cursor_from_mouse(mx, my)
                     board.flag()
                 elif mouse['home'] and (bstate & getattr(curses, mouse['home'])):
                     board.home()
