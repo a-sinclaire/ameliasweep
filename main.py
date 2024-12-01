@@ -10,6 +10,7 @@ import yaml
 
 
 # TODO:
+# remove match statements to improve accessibility
 # look up correct mine ratio
 # add title screen that sets map difficulty
 # add help menu to show controls
@@ -36,27 +37,16 @@ class Cell(Enum):
     EIGHT = 8  # GRAY
     MINE = 9
     FLAG = 10
-    QUESTION = 11
-    UNOPENED = 12
-    OPENED = 13
+    UNOPENED = 11
+    OPENED = 12
 
-    def display(self, stdscr, display_format=None):
-        match self:
-            case self.BLANK:
-                stdscr.addstr(' ')
-            case self.MINE:
-                stdscr.addstr('¤')
-            case self.FLAG:
-                if display_format:
-                    stdscr.addstr('¶', display_format)
-                else:
-                    stdscr.addstr('¶')
-            case self.QUESTION:
-                stdscr.addstr('?')
-            case self.UNOPENED:
-                stdscr.addstr('■')
-            case _:
-                stdscr.addstr(f'{self.value}', curses.color_pair(int(self.value)))
+    def display(self, stdscr: curses.window, symbols: {str: str}, display_format=None):
+        if self == self.FLAG and display_format:
+            stdscr.addstr(symbols[self.name], display_format)
+        elif self.ONE.value <= self.value <= self.EIGHT.value:
+            stdscr.addstr(symbols[self.name], curses.color_pair(int(self.value)))
+        else:
+            stdscr.addstr(symbols[self.name])
 
 
 class Board:
@@ -222,7 +212,7 @@ class Board:
             self.my_board[row][col] = Cell.UNOPENED
             return
 
-    def display(self, stdscr: curses.window) -> None:
+    def display(self, stdscr: curses.window, symbols: {str: str}) -> None:
         if curses.has_colors():
             selector_format = curses.A_BLINK | curses.color_pair(9) | curses.A_BOLD
             death_format = curses.A_BLINK | curses.color_pair(10) | curses.A_BOLD
@@ -248,21 +238,21 @@ class Board:
                     cell = self.real_board[rid][cid]
                 if self.cursor == (rid, cid) and self.state == GameState.PLAYING:
                     stdscr.addstr('[', selector_format)
-                    cell.display(stdscr)
+                    cell.display(stdscr, symbols)
                     stdscr.addstr(']', selector_format)
                     continue
                 if self.death == (rid, cid) and self.state == GameState.LOST:
                     stdscr.addstr('[', death_format)
-                    cell.display(stdscr)
+                    cell.display(stdscr, symbols)
                     stdscr.addstr(']', death_format)
                     continue
                 if cell == Cell.FLAG and self.state == GameState.WON:
                     stdscr.addstr('[', win_format)
-                    cell.display(stdscr, win_format)
+                    cell.display(stdscr, symbols, win_format)
                     stdscr.addstr(']', win_format)
                     continue
                 stdscr.addstr('[')
-                cell.display(stdscr)
+                cell.display(stdscr, symbols)
                 stdscr.addstr(']')
             stdscr.addstr('\n')
         match self.state:
@@ -277,9 +267,9 @@ class Board:
                 stdscr.addstr('Press "R" to restart')
 
 
-def init_colors(colors: dict) -> None:
-    defaults = colors['default']
-    rgbs = colors['rgb']
+def init_colors(colors: {str: dict}) -> None:
+    defaults: {str, int} = colors['default']
+    rgbs: {str: [int]} = colors['rgb']
     if curses.has_colors():
         curses.start_color()
         curses.use_default_colors()
@@ -316,7 +306,7 @@ def setup(stdscr: curses.window) -> None:
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
 
-    init_colors(config['colors'])
+    init_colors(config['look']['colors'])
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
@@ -335,67 +325,65 @@ def setup(stdscr: curses.window) -> None:
 
 
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
-    try:
+    symbols = config['look']['symbols']
+    stdscr.clear()
+    board.display(stdscr, symbols)
+    stdscr.refresh()
+
+    while True:
+        try:
+            key = stdscr.getkey(0, 0)
+        except Exception as e:
+            key = curses.ERR
+        if key == config['controls']['exit']:
+            break
+        elif key == config['controls']['right']:
+            board.right()
+        elif key == config['controls']['left']:
+            board.left()
+        elif key == config['controls']['up']:
+            board.up()
+        elif key == config['controls']['down']:
+            board.down()
+        elif key == config['controls']['reveal']:
+            board.reveal()
+        elif key == config['controls']['flag']:
+            board.flag()
+        elif key == config['controls']['reset']:
+            board.reset()
+        elif key == config['controls']['home']:
+            board.home()
+        elif key == config['controls']['end']:
+            board.end()
+        elif key == config['controls']['floor']:
+            board.floor()
+        elif key == config['controls']['ceiling']:
+            board.ceiling()
+        elif key == 'KEY_MOUSE':
+            try:
+                _, mx, my, _, bstate = curses.getmouse()
+                board.set_cursor(mx, my)
+                if bstate & getattr(curses, config['controls']['mouse_reveal']):
+                    board.reveal()
+                elif bstate & getattr(curses, config['controls']['mouse_flag']):
+                    board.flag()
+            except:
+                pass
+        elif key == curses.ERR:
+            board.display(stdscr, symbols)
+            stdscr.noutrefresh()
+            stdscr.refresh()
+            continue
         stdscr.clear()
-        board.display(stdscr)
+        board.display(stdscr, symbols)
         stdscr.refresh()
 
-        while True:
-            try:
-                key = stdscr.getkey(0, 0)
-            except Exception as e:
-                key = curses.ERR
-            if key == config['controls']['exit']:
-                break
-            elif key == config['controls']['right']:
-                board.right()
-            elif key == config['controls']['left']:
-                board.left()
-            elif key == config['controls']['up']:
-                board.up()
-            elif key == config['controls']['down']:
-                board.down()
-            elif key == config['controls']['reveal']:
-                board.reveal()
-            elif key == config['controls']['flag']:
-                board.flag()
-            elif key == config['controls']['reset']:
-                board.reset()
-            elif key == config['controls']['home']:
-                board.home()
-            elif key == config['controls']['end']:
-                board.end()
-            elif key == config['controls']['floor']:
-                board.floor()
-            elif key == config['controls']['ceiling']:
-                board.ceiling()
-            elif key == 'KEY_MOUSE':
-                try:
-                    _, mx, my, _, bstate = curses.getmouse()
-                    board.set_cursor(mx, my)
-                    if bstate & getattr(curses, config['controls']['mouse_reveal']):
-                        board.reveal()
-                    elif bstate & getattr(curses, config['controls']['mouse_flag']):
-                        board.flag()
-                except:
-                    pass
-            elif key == curses.ERR:
-                board.display(stdscr)
-                stdscr.noutrefresh()
-                stdscr.refresh()
-                continue
-            stdscr.clear()
-            board.display(stdscr)
-            stdscr.refresh()
-    except Exception as e:
-        raise e
-    finally:
-        curses.nocbreak()
-        stdscr.keypad(False)
-        curses.echo()
-        curses.curs_set(1)
-        curses.endwin()
-        exit()
+    curses.nocbreak()
+    stdscr.keypad(False)
+    curses.echo()
+    curses.curs_set(1)
+    curses.endwin()
+    exit()
 
 
 if __name__ == '__main__':

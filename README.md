@@ -33,11 +33,10 @@ Flagged cells are still considered unopened, and you can still open them.
 
 If any of your controls are not working it could be due to your terminal. You can change the default controls in the configuration file. (More on this later).
 
-*Hint: you can use `Home`, `End`, `PageUp`, and `PageDown` as well to traverse faster*
+*Hint: you can use `Home`, `End`, `PageUp`, and `PageDown` to traverse faster*
 
-## Configuration:
-### Controls:
-#### Keyboard:
+## Control Customization:
+### Keyboard:
 In the configuration file there is a section labeled `controls` which allows you to change the default key bindings for each action.
 
 The notation used is `curses` KeyCodes.\
@@ -64,13 +63,17 @@ if __name__ == '__main__':
 ```
 You can use `CTRL+C` to exit this script.
 
-#### Mouse:
+### Mouse:
 There is currently mouse support for opening cells and flagging cells.
 
 A list of available `curses` MouseCodes can be found at the bottom of this `README.md`.
 
+## Look Customization:
+### Symbols:
+In the configuration file there is a section labeled `symbols` under `look` which allows you to change the default symbols used in the program. This will allow you a high level of customization.
+
 ### Colors:
-In the configuration file there is a section labeled `colors` which allows you to change the default colors used in the program.
+In the configuration file there is a section labeled `colors` under `look` which allows you to change the default colors used in the program.
 
 If your terminal does not support color then these values do not matter.
 
