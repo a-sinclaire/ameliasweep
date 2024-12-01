@@ -10,12 +10,12 @@ import yaml
 
 
 # TODO:
-# record num wins and losses
 # look up correct mine ratio
 # add title screen that sets map difficulty
 # add help menu to show controls
 # add mouse support
 # high score system (keep in config?) (w/ names)
+# better win lose screen
 # readme
 #   - explain color configuration
 #   - explain controls configuration
@@ -69,6 +69,8 @@ class Board:
     def __init__(self, width: int, height: int, mine_ratio: float) -> None:
         self.start_time = None
         self.end_time = None
+        self.n_wins = 0
+        self.n_games = 0
         self.width = width
         self.height = height
         self.locations = list(itertools.product(range(self.height), range(self.width)))
@@ -175,6 +177,7 @@ class Board:
             self.death = self.cursor
             self.state = GameState.LOST
             self.end_time = datetime.datetime.now()
+            self.n_games += 1
             curses.flash()
             return
 
@@ -197,6 +200,8 @@ class Board:
         if won:
             self.state = GameState.WON
             self.end_time = datetime.datetime.now()
+            self.n_wins += 1
+            self.n_games += 1
             for m in self.mines:
                 self.my_board[m[0]][m[1]] = Cell.FLAG
 
@@ -221,6 +226,8 @@ class Board:
             death_format = curses.A_REVERSE | curses.color_pair(10) | curses.A_BOLD
             win_format = curses.A_REVERSE | curses.color_pair(11) | curses.A_BOLD
 
+        stdscr.addstr(f'{ "WINS: " + str(self.n_wins):^{(self.width * 3)//2}}')
+        stdscr.addstr(f'{"LOSSES: " + str(self.n_games - self.n_wins):^{(self.width * 3) // 2}}\n')
         if self.start_time is not None and self.state == GameState.PLAYING:
             time = Board.zero_time + (datetime.datetime.now() - self.start_time)
         elif self.state != GameState.PLAYING:
