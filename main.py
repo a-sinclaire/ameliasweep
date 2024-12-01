@@ -179,9 +179,14 @@ class Board:
             return
 
     def display(self, stdscr: curses.window) -> None:
-        selector_format = curses.A_BLINK | curses.color_pair(9) | curses.A_BOLD
-        death_format = curses.A_BLINK | curses.color_pair(10) | curses.A_BOLD
-        win_format = curses.A_BLINK | curses.color_pair(11) | curses.A_BOLD
+        if curses.has_colors():
+            selector_format = curses.A_BLINK | curses.color_pair(9) | curses.A_BOLD
+            death_format = curses.A_BLINK | curses.color_pair(10) | curses.A_BOLD
+            win_format = curses.A_BLINK | curses.color_pair(11) | curses.A_BOLD
+        else:
+            selector_format = curses.A_REVERSE | curses.color_pair(9) | curses.A_BOLD
+            death_format = curses.A_REVERSE | curses.color_pair(10) | curses.A_BOLD
+            win_format = curses.A_REVERSE | curses.color_pair(11) | curses.A_BOLD
 
         for rid, row in enumerate(self.my_board):
             for cid, cell in enumerate(row):
@@ -281,7 +286,10 @@ def main(stdscr) -> None:
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
-    curses.curs_set(0)
+    try:
+        curses.curs_set(0)
+    except:
+        pass
 
     if args.ratio is None:
         args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
