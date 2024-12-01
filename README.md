@@ -2,19 +2,22 @@
 *A terminal based minesweeper application*
 
 ## How to run:
-This code uses python `match` statements, which requires python 3.10+\
-I am using python3.11, so my example will show that.
+This code uses python `match` statements, which requires python 3.10+
 
 To run:\
-`python3.11 main.py`
+`python main.py`
 
 You can also specify the width and height of the board using the `-W` and `-H` options:\
-`python3.11 main.py -W 15 -H 10`
+`python main.py -W 15 -H 10`
 
 You can also specify the ratio of mines in the board as a float between 0 and 1:\
-`python3.11 main.py -r 0.15`
+`python main.py -r 0.15`
 
 If no ratio is given the default number of mines will be equal to the square root of the board area.
+
+The game has some flash effects. If that is something you may be sensitive to please run with the `no-flash` option:\
+`python main.py --no-flash`
+
 
 ## How to play:
 ### Controls:

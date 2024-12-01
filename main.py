@@ -2,6 +2,7 @@
 import argparse
 import curses
 import datetime
+import time
 from enum import Enum
 import itertools
 import math
@@ -53,7 +54,7 @@ class Board:
     neighbors = [x for x in itertools.product(range(-1, 2), range(-1, 2)) if x != (0, 0)]
     zero_time = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
-    def __init__(self, width: int, height: int, mine_ratio: float) -> None:
+    def __init__(self, width: int, height: int, mine_ratio: float, no_flash: bool = False) -> None:
         self.start_time = None
         self.end_time = None
         self.n_wins = 0
@@ -63,6 +64,7 @@ class Board:
         self.locations = list(itertools.product(range(self.height), range(self.width)))
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
+        self.no_flash = no_flash
 
         # self.real_board = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
         #               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
@@ -85,6 +87,8 @@ class Board:
         self.mines = []
         self.is_first_click = True
         self.state = GameState.PLAYING
+        if not self.no_flash:
+            curses.flash()
 
     def populate(self) -> None:
         choices = [x for x in self.locations if x != self.cursor]
@@ -173,7 +177,11 @@ class Board:
             self.state = GameState.LOST
             self.end_time = datetime.datetime.now()
             self.n_games += 1
-            curses.flash()
+            if not self.no_flash:
+                curses.flash()
+                time.sleep(0.1)
+                curses.flash()
+                curses.flash()
             return
 
         if self.real_board[row][col] == Cell.BLANK:
@@ -297,6 +305,7 @@ def setup(stdscr: curses.window) -> None:
     parser.add_argument('-W', '--width', default=default_width, type=int)
     parser.add_argument('-H', '--height', default=default_height, type=int)
     parser.add_argument('-r', '--ratio', default=None, type=float)
+    parser.add_argument('--no-flash', action='store_true', default=False)
     args, _ = parser.parse_known_args()
 
     if args.width < min_width:
@@ -319,7 +328,7 @@ def setup(stdscr: curses.window) -> None:
 
     if args.ratio is None:
         args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
-    board = Board(args.width, args.height, args.ratio)
+    board = Board(args.width, args.height, args.ratio, args.no_flash)
 
     main_loop(stdscr, board, config)
 
