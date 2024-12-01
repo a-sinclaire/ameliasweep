@@ -246,7 +246,7 @@ class Board:
                 stdscr.addstr('Press "R" to restart')
 
 
-def init_colors(colors) -> None:
+def init_colors(colors: dict) -> None:
     defaults = colors['default']
     rgbs = colors['rgb']
     if curses.has_colors():
@@ -264,7 +264,7 @@ def init_colors(colors) -> None:
                 curses.init_pair(idx+1, c, -1)
 
 
-def main(stdscr) -> None:
+def setup(stdscr: curses.window) -> None:
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
 
@@ -297,45 +297,54 @@ def main(stdscr) -> None:
     if args.ratio is None:
         args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
     board = Board(args.width, args.height, args.ratio)
-    stdscr.clear()
-    board.display(stdscr)
 
-    while True:
-        key = stdscr.getkey(0, 0)
-        if key == config['controls']['exit']:
-            break
-        elif key == config['controls']['right']:
-            board.right()
-        elif key == config['controls']['left']:
-            board.left()
-        elif key == config['controls']['up']:
-            board.up()
-        elif key == config['controls']['down']:
-            board.down()
-        elif key == config['controls']['reveal']:
-            board.reveal()
-        elif key == config['controls']['flag']:
-            board.flag()
-        elif key == config['controls']['reset']:
-            board.reset()
-        elif key == config['controls']['home']:
-            board.home()
-        elif key == config['controls']['end']:
-            board.end()
-        elif key == config['controls']['floor']:
-            board.floor()
-        elif key == config['controls']['ceiling']:
-            board.ceiling()
+    main_loop(stdscr, board, config)
+
+
+def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
+    try:
         stdscr.clear()
         board.display(stdscr)
-        stdscr.refresh()
-    curses.nocbreak()
-    stdscr.keypad(False)
-    curses.echo()
-    curses.curs_set(1)
-    curses.endwin()
-    exit()
+
+        while True:
+            key = stdscr.getkey(0, 0)
+            if key == config['controls']['exit']:
+                break
+            elif key == config['controls']['right']:
+                board.right()
+            elif key == config['controls']['left']:
+                board.left()
+            elif key == config['controls']['up']:
+                board.up()
+            elif key == config['controls']['down']:
+                board.down()
+            elif key == config['controls']['reveal']:
+                board.reveal()
+            elif key == config['controls']['flag']:
+                board.flag()
+            elif key == config['controls']['reset']:
+                board.reset()
+            elif key == config['controls']['home']:
+                board.home()
+            elif key == config['controls']['end']:
+                board.end()
+            elif key == config['controls']['floor']:
+                board.floor()
+            elif key == config['controls']['ceiling']:
+                board.ceiling()
+            stdscr.clear()
+            board.display(stdscr)
+            stdscr.refresh()
+    except Exception as e:
+        raise e
+    finally:
+        curses.nocbreak()
+        stdscr.keypad(False)
+        curses.echo()
+        curses.curs_set(1)
+        curses.endwin()
+        exit()
 
 
 if __name__ == '__main__':
-    curses.wrapper(main)
+    curses.wrapper(setup)
