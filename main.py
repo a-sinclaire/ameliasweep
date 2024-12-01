@@ -186,6 +186,7 @@ class Board:
             for n in Board.neighbors:
                 self.cursor = [sum(x) for x in zip((row, col), n)]
                 self.reveal()
+                self.check_win()
             self.cursor = temp
             return
 
