@@ -11,7 +11,6 @@ import yaml
 
 
 # TODO:
-# remove match statements to improve accessibility
 # look up correct mine ratio
 # add title screen that sets map difficulty
 # add help menu to show controls
@@ -267,16 +266,15 @@ class Board:
                 cell.display(stdscr, symbols)
                 stdscr.addstr(']')
             stdscr.addstr('\n')
-        match self.state:
-            case GameState.PLAYING:
-                stdscr.addstr('Use arrow keys to move\n')
-                stdscr.addstr('Press "F" to flag and "Space" to reveal')
-            case GameState.LOST:
-                stdscr.addstr('You Lose!\n')
-                stdscr.addstr('Press "R" to restart')
-            case GameState.WON:
-                stdscr.addstr('You Win!\n')
-                stdscr.addstr('Press "R" to restart')
+        if self.state == GameState.PLAYING:
+            stdscr.addstr('Use arrow keys to move\n')
+            stdscr.addstr('Press "F" to flag and "Space" to reveal')
+        elif self.state == GameState.LOST:
+            stdscr.addstr('You Lose!\n')
+            stdscr.addstr('Press "R" to restart')
+        elif self.state == GameState.WON:
+            stdscr.addstr('You Win!\n')
+            stdscr.addstr('Press "R" to restart')
 
 
 def init_colors(colors: {str: dict}) -> None:

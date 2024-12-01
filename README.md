@@ -2,8 +2,6 @@
 *A terminal based minesweeper application*
 
 ## How to run:
-This code uses python `match` statements, which requires python 3.10+
-
 To run:\
 `python main.py`
 
