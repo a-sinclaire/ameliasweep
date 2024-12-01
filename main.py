@@ -1,13 +1,14 @@
 # Amelia Sinclaire 2024
 import argparse
 import curses
-import time
 from enum import Enum
 import itertools
 import math
 import random
 
 import numpy as np
+import yaml
+
 
 # TODO:
 # timer
@@ -17,8 +18,6 @@ import numpy as np
 # fix color system
 # de-couple numpy
 # add help menu to show controls
-# add config file to change controls
-# add home/end pageup/down func to move around board easier
 # add mouse support
 # high score system (keep in config?) (w/ names)
 
@@ -124,6 +123,30 @@ class Board:
         if self.in_bounds(loc) and self.state == GameState.PLAYING:
             self.cursor = loc
 
+    def up(self) -> None:
+        self.move_cursor(0, -1)
+
+    def down(self) -> None:
+        self.move_cursor(0, 1)
+
+    def left(self) -> None:
+        self.move_cursor(-1, 0)
+
+    def right(self) -> None:
+        self.move_cursor(1, 0)
+
+    def home(self) -> None:
+        self.cursor = (self.cursor[0], 0)
+
+    def end(self) -> None:
+        self.cursor = (self.cursor[0], self.width-1)
+
+    def floor(self) -> None:
+        self.cursor = (self.height-1, self.cursor[1])
+
+    def ceiling(self) -> None:
+        self.cursor = (0, self.cursor[1])
+
     def reveal_all(self) -> None:
         self.my_board = np.full((self.width, self.height), Cell.OPENED)
 
@@ -223,24 +246,7 @@ class Board:
                 stdscr.addstr('Press "R" to restart')
 
 
-def main(stdscr) -> None:
-    min_width = 1
-    min_height = 1
-    default_width = 9
-    default_height = 9
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-W', '--width', default=default_width, type=int)
-    parser.add_argument('-H', '--height', default=default_height, type=int)
-    parser.add_argument('-r', '--ratio', default=None, type=float)
-    args, _ = parser.parse_known_args()
-
-    if args.width < min_width:
-        raise Exception(f'Invalid width: {args.width}. Must be >= {min_width}')
-    if args.height < min_height:
-        raise Exception(f'Invalid height: {args.height}. Must be >= {min_height}')
-    if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
-        raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
-
+def init_colors() -> None:
     if curses.has_colors():
         curses.start_color()
         curses.use_default_colors()
@@ -283,6 +289,28 @@ def main(stdscr) -> None:
             curses.init_pair(10, curses.COLOR_RED, -1)  # lose
             curses.init_pair(11, curses.COLOR_GREEN, -1)  # win
 
+
+def main(stdscr) -> None:
+    min_width = 1
+    min_height = 1
+    default_width = 9
+    default_height = 9
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-W', '--width', default=default_width, type=int)
+    parser.add_argument('-H', '--height', default=default_height, type=int)
+    parser.add_argument('-r', '--ratio', default=None, type=float)
+    args, _ = parser.parse_known_args()
+
+    if args.width < min_width:
+        raise Exception(f'Invalid width: {args.width}. Must be >= {min_width}')
+    if args.height < min_height:
+        raise Exception(f'Invalid height: {args.height}. Must be >= {min_height}')
+    if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
+        raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
+
+    with open('config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+    init_colors()
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
@@ -299,24 +327,30 @@ def main(stdscr) -> None:
 
     while True:
         key = stdscr.getkey(0, 0)
-        match key:
-            case 'q':
-                break
-            case 'KEY_RIGHT':
-                board.move_cursor(1, 0)
-            case 'KEY_LEFT':
-                board.move_cursor(-1, 0)
-            case 'KEY_UP':
-                board.move_cursor(0, -1)
-            case 'KEY_DOWN':
-                board.move_cursor(0, 1)
-            case ' ':
-                board.reveal()
-            case 'f':
-                board.flag()
-            case 'r':
-                if board.state != GameState.PLAYING:
-                    board.reset()
+        if key == config['controls']['exit']:
+            break
+        elif key == config['controls']['right']:
+            board.right()
+        elif key == config['controls']['left']:
+            board.left()
+        elif key == config['controls']['up']:
+            board.up()
+        elif key == config['controls']['down']:
+            board.down()
+        elif key == config['controls']['reveal']:
+            board.reveal()
+        elif key == config['controls']['flag']:
+            board.flag()
+        elif key == config['controls']['reset']:
+            board.reset()
+        elif key == config['controls']['home']:
+            board.home()
+        elif key == config['controls']['end']:
+            board.end()
+        elif key == config['controls']['floor']:
+            board.floor()
+        elif key == config['controls']['ceiling']:
+            board.ceiling()
         stdscr.clear()
         board.display(stdscr)
         stdscr.refresh()

@@ -1,0 +1,13 @@
+controls:
+  exit: 'q'
+  left: 'KEY_LEFT'
+  right: 'KEY_RIGHT'
+  up: 'KEY_UP'
+  down: 'KEY_DOWN'
+  reveal: ' '
+  flag: 'f'
+  reset: 'r'
+  home: 'KEY_HOME'
+  end: 'KEY_END'
+  ceiling: 'KEY_PPAGE'
+  floor: 'KEY_NPAGE'
