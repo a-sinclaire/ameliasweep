@@ -125,7 +125,7 @@ class Board:
     def move_cursor(self, x: int, y: int) -> None:
         new_row = self.cursor[0] + y
         new_col = self.cursor[1] + x
-        loc = (new_row, new_col)
+        loc = (new_row % self.height, new_col % self.width)
         if self.in_bounds(loc) and self.state == GameState.PLAYING:
             self.cursor = loc
 
