@@ -1,6 +1,7 @@
 # Amelia Sinclaire 2024
 import argparse
 import curses
+import datetime
 from enum import Enum
 import itertools
 import math
@@ -9,11 +10,9 @@ import yaml
 
 
 # TODO:
-# timer
 # record num wins and losses
 # look up correct mine ratio
 # add title screen that sets map difficulty
-# fix color system
 # add help menu to show controls
 # add mouse support
 # high score system (keep in config?) (w/ names)
@@ -65,8 +64,11 @@ class Cell(Enum):
 
 class Board:
     neighbors = [x for x in itertools.product(range(-1, 2), range(-1, 2)) if x != (0, 0)]
+    zero_time = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
     def __init__(self, width: int, height: int, mine_ratio: float) -> None:
+        self.start_time = None
+        self.end_time = None
         self.width = width
         self.height = height
         self.locations = list(itertools.product(range(self.height), range(self.width)))
@@ -85,6 +87,8 @@ class Board:
         self.state = GameState.PLAYING
 
     def reset(self) -> None:
+        self.start_time = None
+        self.end_time = None
         self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
         self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
         self.cursor = (self.height//2, self.width//2)
@@ -103,6 +107,8 @@ class Board:
             cell = self.real_board[loc[0]][loc[1]]
             if cell == Cell.BLANK:
                 self.real_board[loc[0]][loc[1]] = Cell(self.count_mines(*loc))
+
+        self.start_time = datetime.datetime.now()
 
     def in_bounds(self, coord: (int, int)) -> bool:
         row, col = coord
@@ -151,6 +157,7 @@ class Board:
         self.my_board = [[Cell.OPENED for x in range(self.width)] for y in range(self.height)]
 
     def reveal(self) -> None:
+        curses.beep()
         if self.is_first_click:
             self.populate()
             self.is_first_click = False
@@ -167,6 +174,8 @@ class Board:
             self.reveal_all()
             self.death = self.cursor
             self.state = GameState.LOST
+            self.end_time = datetime.datetime.now()
+            curses.flash()
             return
 
         if self.real_board[row][col] == Cell.BLANK:
@@ -187,6 +196,7 @@ class Board:
         won = sum(x.count(Cell.UNOPENED) + x.count(Cell.FLAG) for x in self.my_board) == self.n_mines
         if won:
             self.state = GameState.WON
+            self.end_time = datetime.datetime.now()
             for m in self.mines:
                 self.my_board[m[0]][m[1]] = Cell.FLAG
 
@@ -211,6 +221,14 @@ class Board:
             death_format = curses.A_REVERSE | curses.color_pair(10) | curses.A_BOLD
             win_format = curses.A_REVERSE | curses.color_pair(11) | curses.A_BOLD
 
+        if self.start_time is not None and self.state == GameState.PLAYING:
+            time = Board.zero_time + (datetime.datetime.now() - self.start_time)
+        elif self.state != GameState.PLAYING:
+            time = Board.zero_time + (self.end_time - self.start_time)
+        else:
+            time = Board.zero_time
+        time_str = f'{time:%H:%M:%S.%f}'[:-4]
+        stdscr.addstr(f'{time_str:^{self.width * 3}}\n')
         for rid, row in enumerate(self.my_board):
             for cid, cell in enumerate(row):
                 if cell == Cell.OPENED:
@@ -289,6 +307,7 @@ def setup(stdscr: curses.window) -> None:
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
+    stdscr.nodelay(True)
     try:
         curses.curs_set(0)
     except:
@@ -305,9 +324,13 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     try:
         stdscr.clear()
         board.display(stdscr)
+        stdscr.refresh()
 
         while True:
-            key = stdscr.getkey(0, 0)
+            try:
+                key = stdscr.getkey(0, 0)
+            except Exception as e:
+                key = curses.ERR
             if key == config['controls']['exit']:
                 break
             elif key == config['controls']['right']:
@@ -332,6 +355,11 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 board.floor()
             elif key == config['controls']['ceiling']:
                 board.ceiling()
+            elif key == curses.ERR:
+                board.display(stdscr)
+                stdscr.noutrefresh()
+                stdscr.refresh()
+                continue
             stdscr.clear()
             board.display(stdscr)
             stdscr.refresh()
