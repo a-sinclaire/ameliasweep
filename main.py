@@ -16,9 +16,7 @@ import yaml
 # add mouse support
 # high score system (keep in config?) (w/ names)
 # better win lose screen
-# readme
-#   - explain color configuration
-#   - explain controls configuration
+# update readme with any new changes
 
 
 class GameState(Enum):
