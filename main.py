@@ -5,8 +5,6 @@ from enum import Enum
 import itertools
 import math
 import random
-
-import numpy as np
 import yaml
 
 
@@ -16,10 +14,12 @@ import yaml
 # look up correct mine ratio
 # add title screen that sets map difficulty
 # fix color system
-# de-couple numpy
 # add help menu to show controls
 # add mouse support
 # high score system (keep in config?) (w/ names)
+# readme
+#   - explain color configuration
+#   - explain controls configuration
 
 
 class GameState(Enum):
@@ -76,8 +76,8 @@ class Board:
         # self.real_board = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
         #               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
         #               [Cell.FIVE, Cell.SIX, Cell.SEVEN, Cell.EIGHT]]
-        self.real_board = np.full((self.width, self.height), Cell.BLANK)
-        self.my_board = np.full((self.width, self.height), Cell.UNOPENED)
+        self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
+        self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
         self.cursor = (self.height//2, self.width//2)
         self.death = (-1, -1)
         self.mines = []
@@ -85,8 +85,8 @@ class Board:
         self.state = GameState.PLAYING
 
     def reset(self) -> None:
-        self.real_board = np.full((self.width, self.height), Cell.BLANK)
-        self.my_board = np.full((self.width, self.height), Cell.UNOPENED)
+        self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
+        self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
         self.cursor = (self.height//2, self.width//2)
         self.death = (-1, -1)
         self.mines = []
@@ -100,9 +100,9 @@ class Board:
             self.real_board[m[0]][m[1]] = Cell.MINE
 
         for loc in self.locations:
-            cell = self.real_board[loc]
+            cell = self.real_board[loc[0]][loc[1]]
             if cell == Cell.BLANK:
-                self.real_board[loc] = Cell(self.count_mines(*loc))
+                self.real_board[loc[0]][loc[1]] = Cell(self.count_mines(*loc))
 
     def in_bounds(self, coord: (int, int)) -> bool:
         row, col = coord
@@ -113,7 +113,7 @@ class Board:
         for n in Board.neighbors:
             loc = (row + n[0], col + n[1])
             if self.in_bounds(loc):
-                total += 1 if self.real_board[loc[0], loc[1]] == Cell.MINE else 0
+                total += 1 if self.real_board[loc[0]][loc[1]] == Cell.MINE else 0
         return total
 
     def move_cursor(self, x: int, y: int) -> None:
@@ -148,7 +148,7 @@ class Board:
         self.cursor = (0, self.cursor[1])
 
     def reveal_all(self) -> None:
-        self.my_board = np.full((self.width, self.height), Cell.OPENED)
+        self.my_board = [[Cell.OPENED for x in range(self.width)] for y in range(self.height)]
 
     def reveal(self) -> None:
         if self.is_first_click:
@@ -160,17 +160,17 @@ class Board:
         if not self.in_bounds(self.cursor) or self.state != GameState.PLAYING:
             return
 
-        if self.my_board[row, col] == Cell.OPENED:
+        if self.my_board[row][col] == Cell.OPENED:
             return
 
-        if self.real_board[row, col] == Cell.MINE:
+        if self.real_board[row][col] == Cell.MINE:
             self.reveal_all()
             self.death = self.cursor
             self.state = GameState.LOST
             return
 
-        if self.real_board[row, col] == Cell.BLANK:
-            self.my_board[row, col] = Cell.OPENED
+        if self.real_board[row][col] == Cell.BLANK:
+            self.my_board[row][col] = Cell.OPENED
             # recursively reveal 8 surrounding cells
             temp = self.cursor
             for n in Board.neighbors:
@@ -179,26 +179,26 @@ class Board:
             self.cursor = temp
             return
 
-        self.my_board[row, col] = Cell.OPENED
+        self.my_board[row][col] = Cell.OPENED
         self.check_win()
         return
 
     def check_win(self) -> None:
-        won = sum(list(x).count(Cell.UNOPENED) + list(x).count(Cell.FLAG) for x in self.my_board) == self.n_mines
+        won = sum(x.count(Cell.UNOPENED) + x.count(Cell.FLAG) for x in self.my_board) == self.n_mines
         if won:
             self.state = GameState.WON
             for m in self.mines:
-                self.my_board[m[0], m[1]] = Cell.FLAG
+                self.my_board[m[0]][m[1]] = Cell.FLAG
 
     def flag(self) -> None:
         row, col = self.cursor
         if not self.in_bounds(self.cursor):
             return
-        if self.my_board[row, col] == Cell.UNOPENED:
-            self.my_board[row, col] = Cell.FLAG
+        if self.my_board[row][col] == Cell.UNOPENED:
+            self.my_board[row][col] = Cell.FLAG
             return
-        if self.my_board[row, col] == Cell.FLAG:
-            self.my_board[row, col] = Cell.UNOPENED
+        if self.my_board[row][col] == Cell.FLAG:
+            self.my_board[row][col] = Cell.UNOPENED
             return
 
     def display(self, stdscr: curses.window) -> None:
@@ -214,7 +214,7 @@ class Board:
         for rid, row in enumerate(self.my_board):
             for cid, cell in enumerate(row):
                 if cell == Cell.OPENED:
-                    cell = self.real_board[rid, cid]
+                    cell = self.real_board[rid][cid]
                 if self.cursor == (rid, cid) and self.state == GameState.PLAYING:
                     stdscr.addstr('[', selector_format)
                     cell.display(stdscr)
