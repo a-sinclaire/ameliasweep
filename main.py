@@ -246,7 +246,9 @@ class Board:
                 stdscr.addstr('Press "R" to restart')
 
 
-def init_colors() -> None:
+def init_colors(colors) -> None:
+    defaults = colors['default']
+    rgbs = colors['rgb']
     if curses.has_colors():
         curses.start_color()
         curses.use_default_colors()
@@ -254,40 +256,12 @@ def init_colors() -> None:
             curses.init_pair(i + 1, i, -1)
 
         if curses.can_change_color():
-            curses.init_color(21, 0, 0, 1000)
-            curses.init_pair(1, 21, -1)
-            curses.init_color(76, 0, 500, 0)
-            curses.init_pair(2, 76, -1)
-            curses.init_color(196, 1000, 0, 0)
-            curses.init_pair(3, 196, -1)
-            curses.init_color(17, 0, 0, 500)
-            curses.init_pair(4, 17, -1)
-            curses.init_color(88, 500, 0, 0)
-            curses.init_pair(5, 88, -1)
-            curses.init_color(32, 0, 500, 500)
-            curses.init_pair(6, 32, -1)
-            curses.init_color(0, 0, 0, 0)
-            curses.init_pair(7, 0, -1)
-            curses.init_color(249, 500, 500, 500)
-            curses.init_pair(8, 249, -1)
-            curses.init_color(226, 1000, 1000, 0)  # selector
-            curses.init_pair(9, 226, -1)
-            curses.init_color(196, 1000, 0, 0)  # lose
-            curses.init_pair(10, 196, -1)
-            curses.init_color(46, 0, 1000, 0)  # win
-            curses.init_pair(11, 46, -1)
+            for idx, c in enumerate(rgbs.values()):
+                curses.init_color(list(defaults.values())[idx], *c)
+                curses.init_pair(idx+1, list(defaults.values())[idx], -1)
         else:
-            curses.init_pair(1, curses.COLOR_BLUE, -1)
-            curses.init_pair(2, curses.COLOR_GREEN, -1)
-            curses.init_pair(3, curses.COLOR_RED, -1)
-            curses.init_pair(4, curses.COLOR_YELLOW, -1)
-            curses.init_pair(5, curses.COLOR_MAGENTA, -1)
-            curses.init_pair(6, curses.COLOR_CYAN, -1)
-            curses.init_pair(7, curses.COLOR_BLACK, -1)
-            curses.init_pair(8, curses.COLOR_WHITE, -1)
-            curses.init_pair(9, curses.COLOR_YELLOW, -1)  # selector
-            curses.init_pair(10, curses.COLOR_RED, -1)  # lose
-            curses.init_pair(11, curses.COLOR_GREEN, -1)  # win
+            for idx, c in enumerate(defaults.values()):
+                curses.init_pair(idx+1, c, -1)
 
 
 def main(stdscr) -> None:
@@ -311,7 +285,7 @@ def main(stdscr) -> None:
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
 
-    init_colors()
+    init_colors(config['colors'])
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)

@@ -17,3 +17,30 @@ setup:
   min_height: 1
   default_width: 9
   default_height: 9
+
+colors:
+  default:
+    one: 4
+    two: 2
+    three: 1
+    four: 3
+    five: 5
+    six: 6
+    seven: 0
+    eight: 7
+    selector: 3
+    lose: 1
+    win: 2
+
+  rgb:
+    one: [0, 0, 1000]
+    two: [0, 500, 0]
+    three: [1000, 0, 0]
+    four: [0, 0, 500]
+    five: [500, 0, 0]
+    six: [0, 500, 500]
+    seven: [0, 0, 0]
+    eight: [500, 500, 500]
+    selector: [1000, 1000, 0]
+    lose: [1000, 0, 0]
+    win: [0, 1000, 0]
