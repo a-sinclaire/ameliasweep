@@ -37,7 +37,7 @@ If any of your controls are not working it could be due to your terminal. You ca
 
 ## Control Customization:
 ### Keyboard:
-In the configuration file there is a section labeled `controls` which allows you to change the default key bindings for each action.
+In the configuration file there is a section labeled `keyboard` under `controls` which allows you to change the default key bindings for each action.
 
 The notation used is `curses` KeyCodes.\
 A list of available `curses` Keycodes can be found at the bottom of this `README.md`.
@@ -64,9 +64,13 @@ if __name__ == '__main__':
 You can use `CTRL+C` to exit this script.
 
 ### Mouse:
-There is currently mouse support for opening cells and flagging cells.
+In the configuration file there is a section labeled `mouse` under `controls` which allows you to change the default mouse bindings for each action.
+
+By default, the only actions enabled on the mouse are opening and flagging cells. A value of `null` indicates it is not set. 
 
 A list of available `curses` MouseCodes can be found at the bottom of this `README.md`.
+
+*Warning: The mouse controls can be a bit janky at times. Use with caution.*
 
 ## Look Customization:
 ### Symbols:

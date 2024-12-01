@@ -326,6 +326,8 @@ def setup(stdscr: curses.window) -> None:
 
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     symbols = config['look']['symbols']
+    keyboard = config['controls']['keyboard']
+    mouse = config['controls']['mouse']
     stdscr.clear()
     board.display(stdscr, symbols)
     stdscr.refresh()
@@ -335,38 +337,57 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             key = stdscr.getkey(0, 0)
         except Exception as e:
             key = curses.ERR
-        if key == config['controls']['exit']:
+        if key == keyboard['exit']:
             break
-        elif key == config['controls']['right']:
-            board.right()
-        elif key == config['controls']['left']:
+        elif key == keyboard['left']:
             board.left()
-        elif key == config['controls']['up']:
+        elif key == keyboard['right']:
+            board.right()
+        elif key == keyboard['up']:
             board.up()
-        elif key == config['controls']['down']:
+        elif key == keyboard['down']:
             board.down()
-        elif key == config['controls']['reveal']:
+        elif key == keyboard['reveal']:
             board.reveal()
-        elif key == config['controls']['flag']:
+        elif key == keyboard['flag']:
             board.flag()
-        elif key == config['controls']['reset']:
+        elif key == keyboard['reset']:
             board.reset()
-        elif key == config['controls']['home']:
+        elif key == keyboard['home']:
             board.home()
-        elif key == config['controls']['end']:
+        elif key == keyboard['end']:
             board.end()
-        elif key == config['controls']['floor']:
+        elif key == keyboard['floor']:
             board.floor()
-        elif key == config['controls']['ceiling']:
+        elif key == keyboard['ceiling']:
             board.ceiling()
         elif key == 'KEY_MOUSE':
             try:
                 _, mx, my, _, bstate = curses.getmouse()
-                board.set_cursor(mx, my)
-                if bstate & getattr(curses, config['controls']['mouse_reveal']):
+                if mouse['exit'] and (bstate & getattr(curses, mouse['exit'])):
+                    break
+                elif mouse['left'] and (bstate & getattr(curses, mouse['left'])):
+                    board.left()
+                elif mouse['right'] and (bstate & getattr(curses, mouse['right'])):
+                    board.right()
+                elif mouse['up'] and (bstate & getattr(curses, mouse['up'])):
+                    board.up()
+                elif mouse['down'] and (bstate & getattr(curses, mouse['down'])):
+                    board.down()
+                elif mouse['reveal'] and (bstate & getattr(curses, mouse['reveal'])):
+                    board.set_cursor(mx, my)
                     board.reveal()
-                elif bstate & getattr(curses, config['controls']['mouse_flag']):
+                elif mouse['flag'] and (bstate & getattr(curses, mouse['flag'])):
+                    board.set_cursor(mx, my)
                     board.flag()
+                elif mouse['home'] and (bstate & getattr(curses, mouse['home'])):
+                    board.home()
+                elif mouse['end'] and (bstate & getattr(curses, mouse['end'])):
+                    board.end()
+                elif mouse['floor'] and (bstate & getattr(curses, mouse['floor'])):
+                    board.floor()
+                elif mouse['ceiling'] and (bstate & getattr(curses, mouse['ceiling'])):
+                    board.ceiling()
             except:
                 pass
         elif key == curses.ERR:

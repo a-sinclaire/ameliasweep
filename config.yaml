@@ -1,18 +1,31 @@
 controls:
-  exit: 'q'
-  left: 'KEY_LEFT'
-  right: 'KEY_RIGHT'
-  up: 'KEY_UP'
-  down: 'KEY_DOWN'
-  reveal: ' '
-  mouse_reveal: 'BUTTON1_CLICKED'
-  flag: 'f'
-  mouse_flag: 'BUTTON3_CLICKED'
-  reset: 'r'
-  home: 'KEY_HOME'
-  end: 'KEY_END'
-  ceiling: 'KEY_PPAGE'
-  floor: 'KEY_NPAGE'
+  keyboard:
+    left: 'KEY_LEFT'
+    right: 'KEY_RIGHT'
+    up: 'KEY_UP'
+    down: 'KEY_DOWN'
+    reveal: ' '
+    flag: 'f'
+    reset: 'r'
+    home: 'KEY_HOME'
+    end: 'KEY_END'
+    ceiling: 'KEY_PPAGE'
+    floor: 'KEY_NPAGE'
+    exit: 'q'
+  mouse:
+    left: null
+    right: null
+    up: null
+    down: null
+    reveal: 'BUTTON1_CLICKED'
+    flag: 'BUTTON3_CLICKED'
+    reset: null
+    home: null
+    end: null
+    ceiling: null
+    floor: null
+    exit: null
+
 
 setup:
   min_width: 1
