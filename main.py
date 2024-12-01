@@ -291,10 +291,13 @@ def init_colors() -> None:
 
 
 def main(stdscr) -> None:
-    min_width = 1
-    min_height = 1
-    default_width = 9
-    default_height = 9
+    with open('config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+
+    min_width = config['setup']['min_width']
+    min_height = config['setup']['min_height']
+    default_width = config['setup']['default_width']
+    default_height = config['setup']['default_height']
     parser = argparse.ArgumentParser()
     parser.add_argument('-W', '--width', default=default_width, type=int)
     parser.add_argument('-H', '--height', default=default_height, type=int)
@@ -308,8 +311,6 @@ def main(stdscr) -> None:
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
 
-    with open('config.yaml', 'r') as f:
-        config = yaml.safe_load(f)
     init_colors()
     curses.noecho()
     curses.cbreak()
