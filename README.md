@@ -37,6 +37,7 @@ If any of your controls are not working it could be due to your terminal. You ca
 
 ## Configuration:
 ### Controls:
+#### Keyboard:
 In the configuration file there is a section labeled `controls` which allows you to change the default key bindings for each action.
 
 The notation used is `curses` KeyCodes.\
@@ -62,6 +63,11 @@ if __name__ == '__main__':
     curses.wrapper(main)
 ```
 You can use `CTRL+C` to exit this script.
+
+#### Mouse:
+There is currently mouse support for opening cells and flagging cells.
+
+A list of available `curses` MouseCodes can be found at the bottom of this `README.md`.
 
 ### Colors:
 In the configuration file there is a section labeled `colors` which allows you to change the default colors used in the program.
@@ -105,6 +111,7 @@ This should display all available color codes shown in their color.
 ---
 
 ## Curses KeyCodes
+### Keyboard
 [Source](https://www.gnu.org/software/guile-ncurses/manual/html_node/Getting-characters-from-the-keyboard.html)
 
 For any normal key you can just use that key, such as 'h' for the letter 'h'.
@@ -113,94 +120,126 @@ For any sort of special function key you will want to refer to the below table.
 
 Note that almost all of these function keys do not exist on modern keyboards.\
 The standard PC keyboard cannot be depended upon to have more than (key-f 1) through (key-f 12), `KEY_PPAGE` (Page Up), `KEY_NPAGE` (Page Down), `KEY_HOME`, `KEY_END`, `KEY_IC` (Insert), `KEY_DC` (Delete), `KEY_BACKSPACE`, `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, and `KEY_RIGHT`.
-- `KEY_BREAK` = Break key
-- `KEY_DOWN` = Arrow down
-- `KEY_UP` = Arrow up
-- `KEY_LEFT` = Arrow left
-- `KEY_RIGHT` = Arrow right
-- `KEY_HOME` = Home key
-- `KEY_BACKSPACE` = Backspace
-- `KEY_F0` = Function key zero **(through F63)**
-- `KEY_DL` = Delete line
-- `KEY_IL` = Insert line
-- `KEY_DC` = Delete character
-- `KEY_IC` = Insert char or enter insert mode
-- `KEY_EIC` = Exit insert char mode
-- `KEY_CLEAR` = Clear screen
-- `KEY_EOS` = Clear to end of screen
-- `KEY_EOL` = Clear to end of line
-- `KEY_SF` = Scroll 1 line forward
-- `KEY_SR` = Scroll 1 line backward (reverse)
-- `KEY_NPAGE` = Next page
-- `KEY_PPAGE` = Previous page
-- `KEY_STAB` = Set tab
-- `KEY_CTAB` = Clear tab
-- `KEY_CATAB` = Clear all tabs
-- `KEY_ENTER` = Enter or send
-- `KEY_SRESET` = Soft (partial) reset
-- `KEY_RESET` = Reset or hard reset
-- `KEY_PRINT` = Print or copy
-- `KEY_LL` = Home down or bottom (lower left)
-- `KEY_A1` = Upper left of keypad
-- `KEY_A3` = Upper right of keypad
-- `KEY_B2` = Center of keypad
-- `KEY_C1` = Lower left of keypad
-- `KEY_C3` = Lower right of keypad
-- `KEY_BTAB` = Back tab key
-- `KEY_BEG` = Beg(inning) key
-- `KEY_CANCEL` = Cancel key
-- `KEY_CLOSE` = Close key
-- `KEY_COMMAND` = Cmd (command) key
-- `KEY_COPY` = Copy key
-- `KEY_CREATE` = Create key
-- `KEY_END` = End key
-- `KEY_EXIT` = Exit key
-- `KEY_FIND` = Find key
-- `KEY_HELP` = Help key
-- `KEY_MARK` = Mark key
-- `KEY_MESSAGE` = Message key
-- `KEY_MOUSE` = Mouse event read
-- `KEY_MOVE` = Move key
-- `KEY_NEXT` = Next object key
-- `KEY_OPEN` = Open key
-- `KEY_OPTIONS` = Options key
-- `KEY_PREVIOUS` = Previous object key
-- `KEY_REDO` = Redo key
-- `KEY_REFERENCE` = Ref(erence) key
-- `KEY_REFRESH` = Refresh key
-- `KEY_REPLACE` = Replace key
-- `KEY_RESIZE` = Screen resized
-- `KEY_RESTART` = Restart key
-- `KEY_RESUME` = Resume key
-- `KEY_SAVE` = Save key
-- `KEY_SBEG` = Shifted beginning key
-- `KEY_SCANCEL` = Shifted cancel key
-- `KEY_SCOMMAND` = Shifted command key
-- `KEY_SCOPY` = Shifted copy key
-- `KEY_SCREATE` = Shifted create key
-- `KEY_SDC` = Shifted delete char key
-- `KEY_SDL` = Shifted delete line key
-- `KEY_SELECT` = Select key
-- `KEY_SEND` = Shifted end key
-- `KEY_SEOL` = Shifted clear line key
-- `KEY_SEXIT` = Shifted exit key
-- `KEY_SFIND` = Shifted find key
-- `KEY_SHELP` = Shifted help key
-- `KEY_SHOME` = Shifted home key
-- `KEY_SIC` = Shifted input key
-- `KEY_SLEFT` = Shifted left arrow key
-- `KEY_SMESSAGE` = Shifted message key
-- `KEY_SMOVE` = Shifted move key
-- `KEY_SNEXT` = Shifted next key
-- `KEY_SOPTIONS` = Shifted options key
-- `KEY_SPREVIOUS` = Shifted prev key
-- `KEY_SPRINT` = Shifted print key
-- `KEY_SREDO` = Shifted redo key
-- `KEY_SREPLACE` = Shifted replace key
-- `KEY_SRIGHT` = Shifted right arrow
-- `KEY_SRESUME` = Shifted resume key
-- `KEY_SSAVE` = Shifted save key
-- `KEY_SSUSPEND` = Shifted suspend key
-- `KEY_SUNDO` = Shifted undo key
-- `KEY_SUSPEND` = Suspend key
-- `KEY_UNDO` = Undo key
+<pre>
+KEY_BREAK       Break key
+KEY_DOWN        Arrow down
+KEY_UP          Arrow up
+KEY_LEFT        Arrow left
+KEY_RIGHT       Arrow right
+KEY_HOME        Home key
+KEY_BACKSPACE   Backspace
+KEY_F0          Function key zero **(through F63)**
+KEY_DL          Delete line
+KEY_IL          Insert line
+KEY_DC          Delete character
+KEY_IC          Insert char or enter insert mode
+KEY_EIC         Exit insert char mode
+KEY_CLEAR       Clear screen
+KEY_EOS         Clear to end of screen
+KEY_EOL         Clear to end of line
+KEY_SF          Scroll 1 line forward
+KEY_SR          Scroll 1 line backward (reverse)
+KEY_NPAGE       Next page
+KEY_PPAGE       Previous page
+KEY_STAB        Set tab
+KEY_CTAB        Clear tab
+KEY_CATAB       Clear all tabs
+KEY_ENTER       Enter or send
+KEY_SRESET      Soft (partial) reset
+KEY_RESET       Reset or hard reset
+KEY_PRINT       Print or copy
+KEY_LL          Home down or bottom (lower left)
+KEY_A1          Upper left of keypad
+KEY_A3          Upper right of keypad
+KEY_B2          Center of keypad
+KEY_C1          Lower left of keypad
+KEY_C3          Lower right of keypad
+KEY_BTAB        Back tab key
+KEY_BEG         Beg(inning) key
+KEY_CANCEL      Cancel key
+KEY_CLOSE       Close key
+KEY_COMMAND     Cmd (command) key
+KEY_COPY        Copy key
+KEY_CREATE      Create key
+KEY_END         End key
+KEY_EXIT        Exit key
+KEY_FIND        Find key
+KEY_HELP        Help key
+KEY_MARK        Mark key
+KEY_MESSAGE     Message key
+KEY_MOUSE       Mouse event read
+KEY_MOVE        Move key
+KEY_NEXT        Next object key
+KEY_OPEN        Open key
+KEY_OPTIONS     Options key
+KEY_PREVIOUS    Previous object key
+KEY_REDO        Redo key
+KEY_REFERENCE   Ref(erence) key
+KEY_REFRESH     Refresh key
+KEY_REPLACE     Replace key
+KEY_RESIZE      Screen resized
+KEY_RESTART     Restart key
+KEY_RESUME      Resume key
+KEY_SAVE        Save key
+KEY_SBEG        Shifted beginning key
+KEY_SCANCEL     Shifted cancel key
+KEY_SCOMMAND    Shifted command key
+KEY_SCOPY       Shifted copy key
+KEY_SCREATE     Shifted create key
+KEY_SDC         Shifted delete char key
+KEY_SDL         Shifted delete line key
+KEY_SELECT      Select key
+KEY_SEND        Shifted end key
+KEY_SEOL        Shifted clear line key
+KEY_SEXIT       Shifted exit key
+KEY_SFIND       Shifted find key
+KEY_SHELP       Shifted help key
+KEY_SHOME       Shifted home key
+KEY_SIC         Shifted input key
+KEY_SLEFT       Shifted left arrow key
+KEY_SMESSAGE    Shifted message key
+KEY_SMOVE       Shifted move key
+KEY_SNEXT       Shifted next key
+KEY_SOPTIONS    Shifted options key
+KEY_SPREVIOUS   Shifted prev key
+KEY_SPRINT      Shifted print key
+KEY_SREDO       Shifted redo key
+KEY_SREPLACE    Shifted replace key
+KEY_SRIGHT      Shifted right arrow
+KEY_SRESUME     Shifted resume key
+KEY_SSAVE       Shifted save key
+KEY_SSUSPEND    Shifted suspend key
+KEY_SUNDO       Shifted undo key
+KEY_SUSPEND     Suspend key
+KEY_UNDO        Undo key
+</pre>
+
+### Mouse
+[Source](https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/mouse.html)
+<pre>
+BUTTON1_PRESSED          mouse button 1 down
+BUTTON1_RELEASED         mouse button 1 up
+BUTTON1_CLICKED          mouse button 1 clicked
+BUTTON1_DOUBLE_CLICKED   mouse button 1 double clicked
+BUTTON1_TRIPLE_CLICKED   mouse button 1 triple clicked
+BUTTON2_PRESSED          mouse button 2 down
+BUTTON2_RELEASED         mouse button 2 up
+BUTTON2_CLICKED          mouse button 2 clicked
+BUTTON2_DOUBLE_CLICKED   mouse button 2 double clicked
+BUTTON2_TRIPLE_CLICKED   mouse button 2 triple clicked
+BUTTON3_PRESSED          mouse button 3 down
+BUTTON3_RELEASED         mouse button 3 up
+BUTTON3_CLICKED          mouse button 3 clicked
+BUTTON3_DOUBLE_CLICKED   mouse button 3 double clicked
+BUTTON3_TRIPLE_CLICKED   mouse button 3 triple clicked
+BUTTON4_PRESSED          mouse button 4 down
+BUTTON4_RELEASED         mouse button 4 up
+BUTTON4_CLICKED          mouse button 4 clicked
+BUTTON4_DOUBLE_CLICKED   mouse button 4 double clicked
+BUTTON4_TRIPLE_CLICKED   mouse button 4 triple clicked
+BUTTON_SHIFT             shift was down during button state change
+BUTTON_CTRL              control was down during button state change
+BUTTON_ALT               alt was down during button state change
+ALL_MOUSE_EVENTS         report all button state changes
+REPORT_MOUSE_POSITION    report mouse movement
+</pre>

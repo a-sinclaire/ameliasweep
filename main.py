@@ -13,7 +13,6 @@ import yaml
 # look up correct mine ratio
 # add title screen that sets map difficulty
 # add help menu to show controls
-# add mouse support
 # high score system (keep in config?) (w/ names)
 # better win lose screen
 # update readme with any new changes
@@ -121,6 +120,14 @@ class Board:
             if self.in_bounds(loc):
                 total += 1 if self.real_board[loc[0]][loc[1]] == Cell.MINE else 0
         return total
+
+    def set_cursor(self, x: int, y: int) -> None:
+        # x and y are screen coordinates
+        new_row = y - 2  # two for timer and win/loss counts
+        new_col = (x // 3)  # to account for [ ] style
+        loc = (new_row, new_col)
+        if self.in_bounds(loc) and self.state == GameState.PLAYING:
+            self.cursor = loc
 
     def move_cursor(self, x: int, y: int) -> None:
         new_row = self.cursor[0] + y
@@ -314,6 +321,7 @@ def setup(stdscr: curses.window) -> None:
     curses.cbreak()
     stdscr.keypad(True)
     stdscr.nodelay(True)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS)
     try:
         curses.curs_set(0)
     except:
@@ -361,6 +369,16 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 board.floor()
             elif key == config['controls']['ceiling']:
                 board.ceiling()
+            elif key == 'KEY_MOUSE':
+                try:
+                    _, mx, my, _, bstate = curses.getmouse()
+                    board.set_cursor(mx, my)
+                    if bstate & getattr(curses, config['controls']['mouse_reveal']):
+                        board.reveal()
+                    elif bstate & getattr(curses, config['controls']['mouse_flag']):
+                        board.flag()
+                except:
+                    pass
             elif key == curses.ERR:
                 board.display(stdscr)
                 stdscr.noutrefresh()
