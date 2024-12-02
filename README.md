@@ -18,6 +18,13 @@ The game has some flash effects. If that is something you may be sensitive to pl
 
 
 ## How to play:
+### Game Selection:
+If no custom arguments were passed in on the command line, the game will open to a main menu which will allow you to select your difficulty level, or set a custom game.
+
+If you are just starting out, simply press `1` on the main menu to start a `Beginner` game (9x9 board).
+
+Games with larger boards may immediately crash. This is due to your terminal not having enough room. Try resizing it or reducing your font size.
+
 ### Controls:
 - Use the `arrow keys` to move the cursor around the board.
 - Use the `space bar` to open a cell.
@@ -35,6 +42,11 @@ Flagged cells are still considered unopened, and you can still open them.
 If any of your controls are not working it could be due to your terminal. You can change the default controls in the configuration file. (More on this later).
 
 *Hint: you can use `Home`, `End`, `PageUp`, and `PageDown` to traverse faster*
+
+## Game Customization:
+Highscores _(not yet implemented)_ can only be saved for the preset difficulties. You can modify what your own presets look like by modifying the values in the `config.yaml` file under `setup`. This allows you to define the board height, width, and ratio of mines. The ratio should be a value between 0 and 1.
+
+Note: If you modify these values the highscores will persist for the old settings. You may want to clear out the highscore files. *(Again, these don't exist yet)*
 
 ## Control Customization:
 ### Keyboard:

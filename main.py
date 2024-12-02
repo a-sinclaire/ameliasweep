@@ -11,9 +11,10 @@ import yaml
 
 
 # TODO:
-# add title screen that sets map difficulty
+# high score system
+# show high score for each difficulty on splash
+# show total time played(?)
 # add help menu to show controls
-# high score system (keep in config?) (w/ names)
 # better win lose screen
 # update readme with any new changes
 
@@ -52,7 +53,7 @@ class Board:
     neighbors = [x for x in itertools.product(range(-1, 2), range(-1, 2)) if x != (0, 0)]
     zero_time = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
-    def __init__(self, width: int, height: int, mine_ratio: float, no_flash: bool = False) -> None:
+    def __init__(self, width: int, height: int, mine_ratio: float, no_flash: bool = False, custom: bool = False) -> None:
         self.start_time = None
         self.end_time = None
         self.n_wins = 0
@@ -303,6 +304,8 @@ def setup(stdscr: curses.window) -> None:
 
     min_width = config['setup']['min_width']
     min_height = config['setup']['min_height']
+    max_width = config['setup']['max_width']
+    max_height = config['setup']['max_height']
     default_width = config['setup']['beginner']['width']
     default_height = config['setup']['beginner']['height']
     default_ratio = config['setup']['beginner']['ratio']
@@ -320,10 +323,14 @@ def setup(stdscr: curses.window) -> None:
 
     explicit = argparse.Namespace(**{key: (value is not sentinel) for key, value in vars(sentinel_ns).items()})
 
-    if args.width < min_width:
+    if min_width and args.width < min_width:
         raise Exception(f'Invalid width: {args.width}. Must be >= {min_width}')
-    if args.height < min_height:
+    if min_height and args.height < min_height:
         raise Exception(f'Invalid height: {args.height}. Must be >= {min_height}')
+    if max_width and args.width > max_width:
+        raise Exception(f'Invalid width: {args.width}. Must be <= {max_width}')
+    if max_height and args.height > max_height:
+        raise Exception(f'Invalid height: {args.height}. Must be <= {max_width}')
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
 
@@ -422,11 +429,20 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             board = Board(int(expert_width), int(expert_height), float(expert_ratio), no_flash)
             break
         elif key == '4':
+            min_width = config['setup']['min_width']
+            min_height = config['setup']['min_height']
+            max_width = config['setup']['max_width']
+            max_height = config['setup']['max_height']
             custom_width = ''
             while not custom_width.isdigit():
                 stdscr.clear()
                 logo(stdscr)
-                custom_width = raw_input(stdscr, 7, 0, "width: ").lower()
+                custom_width = raw_input(stdscr, 7, 0, f"width (min: {config['setup']['min_width']}, max: {config['setup']['max_width']}): ").lower()
+                if custom_width.isdigit():
+                    if min_width and int(custom_width) < min_width:
+                        custom_width = 'NaN'
+                    if max_width and int(custom_width) > max_width:
+                        custom_width = 'NaN'
                 if custom_width == '':
                     custom_width = config['setup']['beginner']['width']
             custom_height = ''
@@ -435,6 +451,11 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
                 logo(stdscr)
                 stdscr.addstr(f'width: {custom_width}')
                 custom_height = raw_input(stdscr, 8, 0, "height: ").lower()
+                if custom_height.isdigit():
+                    if min_height and int(custom_height) < min_height:
+                        custom_height = 'NaN'
+                    if max_height and int(custom_height) > max_height:
+                        custom_height = 'NaN'
                 if custom_height == '':
                     custom_height = config['setup']['beginner']['height']
             custom_ratio = ''
@@ -444,9 +465,12 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
                 stdscr.addstr(f'width: {custom_width}\n')
                 stdscr.addstr(f'height: {custom_height}')
                 custom_ratio = raw_input(stdscr, 9, 0, "ratio: ").lower()
+                if custom_ratio.replace('.', '', 1).isdigit():
+                    if float(custom_ratio) > 1 or float(custom_ratio) < 0:
+                        custom_ratio = 'NaN'
                 if custom_ratio == '':
                     custom_ratio = str(config['setup']['beginner']['ratio'])
-            board = Board(int(custom_width), int(custom_height), float(custom_ratio), no_flash)
+            board = Board(int(custom_width), int(custom_height), float(custom_ratio), no_flash, custom=True)
             break
 
     main_loop(stdscr, board, config)
