@@ -14,7 +14,6 @@ import yaml
 
 # TODO:
 # show high scores when you get a new high score.
-# add dummy default high scores.
 # show highest score for each difficulty on splash
 # better win lose screen
 # show total time played(?)
