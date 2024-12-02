@@ -336,6 +336,7 @@ def setup(stdscr: curses.window) -> None:
 
     init_colors(config['look']['colors'])
     curses.mousemask(curses.ALL_MOUSE_EVENTS)
+    stdscr.nodelay(True)
     try:
         curses.curs_set(0)
     except:
@@ -417,6 +418,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             stdscr.keypad(False)
             curses.echo()
             curses.curs_set(1)
+            stdscr.nodelay(False)
             curses.endwin()
             exit()
         if key == '1':
@@ -473,6 +475,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             board = Board(int(custom_width), int(custom_height), float(custom_ratio), no_flash, custom=True)
             break
 
+    curses.noecho()
     main_loop(stdscr, board, config)
 
 
@@ -555,6 +558,7 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     stdscr.keypad(False)
     curses.echo()
     curses.curs_set(1)
+    stdscr.nodelay(False)
     curses.endwin()
     exit()
 
