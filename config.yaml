@@ -27,8 +27,8 @@ controls:
     exit: null
 
 setup:
-  min_width: 1
-  min_height: 1
+  min_width: 2
+  min_height: 2
   max_width: null
   max_height: null
   beginner:
