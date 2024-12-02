@@ -14,17 +14,17 @@ import yaml
 
 # TODO:
 # show high scores when you get a new high score.
-# show highest score for each difficulty on splash
 # better win lose screen
+# do something about when the screen isnt big enough? it can cause a crash.
 # show total time played(?)
 # update readme with any new changes
 
 
 class Difficulty(Enum):
-    BEGINNER = 1
-    INTERMEDIATE = 2
-    EXPERT = 3
-    CUSTOM = 4
+    BEGINNER = 0
+    INTERMEDIATE = 1
+    EXPERT = 2
+    CUSTOM = 3
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
@@ -262,7 +262,7 @@ class Board:
             highscore_data[idx][2] = (datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second, microseconds=t.microsecond))
             highscore_data[idx][0] = Difficulty[hs[0]]
         scores = [x for x in highscore_data if x == self.difficulty.name]
-        if all(self.score < s for s in scores) or scores is None or len(scores) < self.hs_config[self.difficulty.name + '_MAX']:
+        if any(self.score < s for s in scores) or scores is None or len(scores) < self.hs_config[self.difficulty.name + '_MAX']:
             # NEW HIGH SCORE!
             self.display()
             self.stdscr.addstr('NEW HIGHSCORE!!', curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK)
@@ -283,6 +283,44 @@ class Board:
                     for hs in cat[:self.hs_config[cat[0][0] + '_MAX']]:
                         writer.writerow(hs)
                     writer.writerow('')
+            # SHOW highscore list
+            self.show_highscores()
+
+    def show_highscores(self) -> None:
+        self.pause()
+        highscore_data = []
+        with open('highscores.csv', 'r') as csvfile:
+            reader = csv.reader(csvfile, delimiter=' ')
+            for row in reader:
+                if ''.join(row).strip() == '':
+                    continue
+                highscore_data.append(row)
+        for idx, hs in enumerate(highscore_data):
+            t = datetime.datetime.strptime(hs[2], '%H:%M:%S.%f')
+            highscore_data[idx][2] = (datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second, microseconds=t.microsecond))
+            highscore_data[idx][0] = Difficulty[hs[0]]
+        highscore_data = sorted(highscore_data, key=operator.itemgetter(0, 2))
+        highscore_data = [[hs[0].name, hs[1], f'{Board.zero_time + hs[2]:%H:%M:%S.%f}'] for hs in highscore_data]
+
+        highscores = []
+        for difficulty in Difficulty:
+            highscores.append([x for x in highscore_data if x[0] == difficulty.name])
+
+        self.stdscr.clear()
+        self.stdscr.addstr(f'{self.difficulty.name} HIGH SCORES\n', curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK)
+        for idx, score in enumerate(highscores[self.difficulty.value][:self.hs_config[self.difficulty.name + '_MAX']]):
+            self.stdscr.addstr(f'[')
+            self.stdscr.addstr(f'{idx+1}', curses.color_pair(((idx + 1) % 8)) + 1)
+            self.stdscr.addstr(f']{" " * (len(str(len(highscores))) - len(str(idx + 1)) + 2)}')
+            if f'{Board.zero_time + self.score:%H:%M:%S.%f}' == score[2]:
+                self.stdscr.addstr(f'{score[1]} | {score[2]}\n', curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK)
+            else:
+                self.stdscr.addstr(f'{score[1]} | {score[2]}\n')
+        self.stdscr.nodelay(False)
+        self.stdscr.refresh()
+        self.stdscr.getch()
+        self.stdscr.nodelay(False)
+        self.pause()
 
     def check_win(self) -> None:
         if self.state != GameState.PLAYING:
@@ -473,7 +511,7 @@ def show_help(stdscr: curses.window, config: dict) -> None:
     stdscr.clear()
     stdscr.addstr('HELP\n\n')
     for command in keyboard.keys():
-        stdscr.addstr(f'{command + ":":<8} {control_str(keyboard[command], mouse[command])}\n')
+        stdscr.addstr(f'{command + ":":<{1+len(max(keyboard.keys(), key=len))}} {control_str(keyboard[command], mouse[command])}\n')
 
 
 def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
@@ -633,6 +671,8 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
         elif key == keyboard["HELP"]:
             board.pause()
             show_help(stdscr, config)
+        elif key == keyboard["HIGHSCORES"]:
+            board.show_highscores()
         elif key == keyboard["LEFT"]:
             board.left()
         elif key == keyboard["RIGHT"]:
@@ -663,6 +703,8 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 elif mouse["HELP"] and (bstate & getattr(curses, mouse["HELP"])):
                     board.pause()
                     show_help(stdscr, config)
+                elif mouse["HIGHSCORES"] and (bstate & getattr(curses, mouse["HIGHSCORES"])):
+                    board.show_highscores()
                 elif mouse["LEFT"] and (bstate & getattr(curses, mouse["LEFT"])):
                     board.left()
                 elif mouse["RIGHT"] and (bstate & getattr(curses, mouse["RIGHT"])):
