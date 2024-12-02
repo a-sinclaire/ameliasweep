@@ -3,12 +3,12 @@ import argparse
 import csv
 import curses
 import datetime
-import operator
-import time
 from enum import Enum
 import itertools
 import math
+import operator
 import random
+import time
 import yaml
 
 
@@ -487,20 +487,50 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
     expert_height = config["SETUP"]["EXPERT"]["HEIGHT"]
     expert_ratio = config["SETUP"]["EXPERT"]["RATIO"]
 
+    highscore_data = []
+    with open('highscores.csv', 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=' ')
+        for row in reader:
+            if ''.join(row).strip() == '':
+                continue
+            highscore_data.append(row)
+    for idx, hs in enumerate(highscore_data):
+        t = datetime.datetime.strptime(hs[2], '%H:%M:%S.%f')
+        highscore_data[idx][2] = (
+            datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second, microseconds=t.microsecond))
+        highscore_data[idx][0] = Difficulty[hs[0]]
+    highscore_data = sorted(highscore_data, key=operator.itemgetter(0, 2))
+    highscore_data = [[hs[0].name, hs[1], f'{Board.zero_time + hs[2]:%H:%M:%S.%f}'] for hs in highscore_data]
+    total_list = []
+    for difficulty in Difficulty:
+        total_list.append([x for x in highscore_data if x[0] == difficulty.name])
+
     stdscr.clear()
     logo(stdscr)
     stdscr.addstr(f'[')
     stdscr.addstr('1', curses.color_pair(1))
-    stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) : {beginner_ratio:.2%}\n')
+    if len(total_list[0]) > 0:
+        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) | {beginner_ratio:.2%} | HS: {total_list[0][0][1]} {total_list[0][0][2]}\n')
+    else:
+        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) | {beginner_ratio:.2%}\n')
     stdscr.addstr(f'[')
     stdscr.addstr('2', curses.color_pair(2))
-    stdscr.addstr(f'] Intermediate ({intermediate_width}x{intermediate_height}) : {intermediate_ratio:.2%}\n')
+    if len(total_list[1]) > 0:
+        stdscr.addstr(f'] Intermediate ({intermediate_width}x{intermediate_height}) | {intermediate_ratio:.2%} | HS: {total_list[1][0][1]} {total_list[1][0][2]}\n')
+    else:
+        stdscr.addstr(f'] Intermediate ({intermediate_width}x{intermediate_height}) | {intermediate_ratio:.2%}\n')
     stdscr.addstr(f'[')
     stdscr.addstr('3', curses.color_pair(3))
-    stdscr.addstr(f'] Expert       ({expert_width}x{expert_height}) : {expert_ratio:.2%}\n')
+    if len(total_list[2]) > 0:
+        stdscr.addstr(f'] Expert       ({expert_width}x{expert_height}) | {expert_ratio:.2%} | HS: {total_list[2][0][1]} {total_list[2][0][2]}\n')
+    else:
+        stdscr.addstr(f'] Expert       ({expert_width}x{expert_height}) | {expert_ratio:.2%}\n')
     stdscr.addstr(f'[')
     stdscr.addstr('4', curses.color_pair(4))
-    stdscr.addstr(f'] Custom\n')
+    if len(total_list[3]) > 0:
+        stdscr.addstr(f'] Custom                        | HS: {total_list[3][0][1]} {total_list[3][0][2]}\n')
+    else:
+        stdscr.addstr(f'] Custom\n')
     stdscr.addstr('\n')
 
     display = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
