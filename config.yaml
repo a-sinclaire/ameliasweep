@@ -26,12 +26,21 @@ controls:
     floor: null
     exit: null
 
-
 setup:
   min_width: 1
   min_height: 1
-  default_width: 9
-  default_height: 9
+  beginner:
+    width: 09
+    height: 09
+    ratio: 0.123
+  intermediate:
+    width: 16
+    height: 16
+    ratio: 0.156
+  expert:
+    width: 30
+    height: 16
+    ratio: 0.206
 
 look:
   symbols:

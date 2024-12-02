@@ -11,7 +11,6 @@ import yaml
 
 
 # TODO:
-# look up correct mine ratio
 # add title screen that sets map difficulty
 # add help menu to show controls
 # high score system (keep in config?) (w/ names)
@@ -65,12 +64,9 @@ class Board:
         self.n_mines = round(self.width * self.height * self.mine_ratio)
         self.no_flash = no_flash
 
-        # self.real_board = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
-        #               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
-        #               [Cell.FIVE, Cell.SIX, Cell.SEVEN, Cell.EIGHT]]
         self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
         self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
-        self.cursor = (self.height//2, self.width//2)
+        self.cursor = (self.height // 2, self.width // 2)
         self.death = (-1, -1)
         self.mines = []
         self.is_first_click = True
@@ -81,7 +77,7 @@ class Board:
         self.end_time = None
         self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
         self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
-        self.cursor = (self.height//2, self.width//2)
+        self.cursor = (self.height // 2, self.width // 2)
         self.death = (-1, -1)
         self.mines = []
         self.is_first_click = True
@@ -145,10 +141,10 @@ class Board:
         self.cursor = (self.cursor[0], 0)
 
     def end(self) -> None:
-        self.cursor = (self.cursor[0], self.width-1)
+        self.cursor = (self.cursor[0], self.width - 1)
 
     def floor(self) -> None:
-        self.cursor = (self.height-1, self.cursor[1])
+        self.cursor = (self.height - 1, self.cursor[1])
 
     def ceiling(self) -> None:
         self.cursor = (0, self.cursor[1])
@@ -208,6 +204,8 @@ class Board:
             self.my_board[m[0]][m[1]] = Cell.FLAG
 
     def check_win(self) -> None:
+        if self.state != GameState.PLAYING:
+            return
         won = sum(x.count(Cell.UNOPENED) + x.count(Cell.FLAG) for x in self.my_board) == self.n_mines
         if won:
             self.won()
@@ -233,7 +231,7 @@ class Board:
             death_format = curses.A_REVERSE | curses.color_pair(10) | curses.A_BOLD
             win_format = curses.A_REVERSE | curses.color_pair(11) | curses.A_BOLD
 
-        stdscr.addstr(f'{ "WINS: " + str(self.n_wins):^{(self.width * 3)//2}}')
+        stdscr.addstr(f'{"WINS: " + str(self.n_wins):^{(self.width * 3) // 2}}')
         stdscr.addstr(f'{"LOSSES: " + str(self.n_games - self.n_wins):^{(self.width * 3) // 2}}\n')
         if self.start_time is not None and self.state == GameState.PLAYING:
             time = Board.zero_time + (datetime.datetime.now() - self.start_time)
@@ -289,10 +287,14 @@ def init_colors(colors: {str: dict}) -> None:
         if curses.can_change_color():
             for idx, c in enumerate(rgbs.values()):
                 curses.init_color(list(defaults.values())[idx], *c)
-                curses.init_pair(idx+1, list(defaults.values())[idx], -1)
+                curses.init_pair(idx + 1, list(defaults.values())[idx], -1)
         else:
             for idx, c in enumerate(defaults.values()):
-                curses.init_pair(idx+1, c, -1)
+                curses.init_pair(idx + 1, c, -1)
+
+
+class _Sentinel:
+    pass
 
 
 def setup(stdscr: curses.window) -> None:
@@ -301,14 +303,22 @@ def setup(stdscr: curses.window) -> None:
 
     min_width = config['setup']['min_width']
     min_height = config['setup']['min_height']
-    default_width = config['setup']['default_width']
-    default_height = config['setup']['default_height']
+    default_width = config['setup']['beginner']['width']
+    default_height = config['setup']['beginner']['height']
+    default_ratio = config['setup']['beginner']['ratio']
     parser = argparse.ArgumentParser()
     parser.add_argument('-W', '--width', default=default_width, type=int)
     parser.add_argument('-H', '--height', default=default_height, type=int)
-    parser.add_argument('-r', '--ratio', default=None, type=float)
+    parser.add_argument('-r', '--ratio', default=default_ratio, type=float)
     parser.add_argument('--no-flash', action='store_true', default=False)
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
+
+    # https://stackoverflow.com/questions/58594956/find-out-which-arguments-were-passed-explicitly-in-argparse
+    sentinel = _Sentinel
+    sentinel_ns = argparse.Namespace(**{key: sentinel for key in vars(args)})
+    parser.parse_args(namespace=sentinel_ns)
+
+    explicit = argparse.Namespace(**{key: (value is not sentinel) for key, value in vars(sentinel_ns).items()})
 
     if args.width < min_width:
         raise Exception(f'Invalid width: {args.width}. Must be >= {min_width}')
@@ -318,19 +328,126 @@ def setup(stdscr: curses.window) -> None:
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
 
     init_colors(config['look']['colors'])
-    curses.noecho()
-    curses.cbreak()
-    stdscr.keypad(True)
-    stdscr.nodelay(True)
     curses.mousemask(curses.ALL_MOUSE_EVENTS)
     try:
         curses.curs_set(0)
     except:
         pass
 
-    if args.ratio is None:
-        args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
-    board = Board(args.width, args.height, args.ratio, args.no_flash)
+    if explicit.width or explicit.height or explicit.ratio:
+        if not explicit.ratio:
+            args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
+        board = Board(args.width, args.height, args.ratio, args.no_flash)
+        main_loop(stdscr, board, config)
+    else:
+        splash(stdscr, config, args.no_flash)
+
+
+# https://stackoverflow.com/a/21785167
+def raw_input(stdscr: curses.window, r: int, c: int, prompt: str) -> str:
+    curses.echo()
+    stdscr.addstr(r, c, prompt)
+    stdscr.refresh()
+    inp = stdscr.getstr(r + 1, c, 20)
+    return inp.decode()   # ^^^^  reading input at next line
+
+
+def logo(stdscr: curses.window) -> None:
+    stdscr.addstr(f'\n')
+    stdscr.addstr(f'▗▖  ▗▖▗▞▀▚▖▗▞▀▚▖█ ▗▞▀▚▖▄   ▄ ▗▖  ▗▖▄ ▄▄▄▄  ▗▞▀▚▖\n')
+    stdscr.addstr(f'▐▛▚▞▜▌▐▛▀▀▘▐▛▀▀▘█ ▐▛▀▀▘█   █ ▐▛▚▞▜▌▄ █   █ ▐▛▀▀▘\n')
+    stdscr.addstr(f'▐▌  ▐▌▝▚▄▄▖▝▚▄▄▖█ ▝▚▄▄▖ ▀▀▀█ ▐▌  ▐▌█ █   █ ▝▚▄▄▖\n')
+    stdscr.addstr(f'▐▌  ▐▌          █      ▄   █ ▐▌  ▐▌█            \n')
+    stdscr.addstr(f'                        ▀▀▀                     \n')
+    stdscr.addstr(f'\n')
+
+
+def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
+    beginner_width = config["setup"]["beginner"]["width"]
+    beginner_height = config["setup"]["beginner"]["height"]
+    beginner_ratio = config["setup"]["beginner"]["ratio"]
+    intermediate_width = config["setup"]["intermediate"]["width"]
+    intermediate_height = config["setup"]["intermediate"]["height"]
+    intermediate_ratio = config["setup"]["intermediate"]["ratio"]
+    expert_width = config["setup"]["expert"]["width"]
+    expert_height = config["setup"]["expert"]["height"]
+    expert_ratio = config["setup"]["expert"]["ratio"]
+
+    stdscr.clear()
+    logo(stdscr)
+    stdscr.addstr(f'[')
+    stdscr.addstr('1', curses.color_pair(1))
+    stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) : {beginner_ratio:.2%}\n')
+    stdscr.addstr(f'[')
+    stdscr.addstr('2', curses.color_pair(2))
+    stdscr.addstr(f'] Intermediate ({intermediate_width}x{intermediate_height}) : {intermediate_ratio:.2%}\n')
+    stdscr.addstr(f'[')
+    stdscr.addstr('3', curses.color_pair(3))
+    stdscr.addstr(f'] Expert       ({expert_width}x{expert_height}) : {expert_ratio:.2%}\n')
+    stdscr.addstr(f'[')
+    stdscr.addstr('4', curses.color_pair(4))
+    stdscr.addstr(f'] Custom\n')
+    stdscr.addstr('\n')
+
+    display = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
+               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
+               [Cell.FIVE, Cell.SIX, Cell.SEVEN, Cell.EIGHT]]
+    for row in display:
+        for cell in row:
+            stdscr.addstr('[')
+            cell.display(stdscr, config['look']['symbols'])
+            stdscr.addstr(']')
+        stdscr.addstr('\n')
+    stdscr.refresh()
+
+    while True:
+        try:
+            key = stdscr.getkey(0, 0)
+        except Exception as e:
+            key = curses.ERR
+        if key == config['controls']['keyboard']['exit']:
+            curses.nocbreak()
+            stdscr.keypad(False)
+            curses.echo()
+            curses.curs_set(1)
+            curses.endwin()
+            exit()
+        if key == '1':
+            board = Board(int(beginner_width), int(beginner_height), float(beginner_ratio), no_flash)
+            break
+        elif key == '2':
+            board = Board(int(intermediate_width), int(intermediate_height), float(intermediate_ratio), no_flash)
+            break
+        elif key == '3':
+            board = Board(int(expert_width), int(expert_height), float(expert_ratio), no_flash)
+            break
+        elif key == '4':
+            custom_width = ''
+            while not custom_width.isdigit():
+                stdscr.clear()
+                logo(stdscr)
+                custom_width = raw_input(stdscr, 7, 0, "width: ").lower()
+                if custom_width == '':
+                    custom_width = config['setup']['beginner']['width']
+            custom_height = ''
+            while not custom_height.isdigit():
+                stdscr.clear()
+                logo(stdscr)
+                stdscr.addstr(f'width: {custom_width}')
+                custom_height = raw_input(stdscr, 8, 0, "height: ").lower()
+                if custom_height == '':
+                    custom_height = config['setup']['beginner']['height']
+            custom_ratio = ''
+            while not custom_ratio.replace('.', '', 1).isdigit():
+                stdscr.clear()
+                logo(stdscr)
+                stdscr.addstr(f'width: {custom_width}\n')
+                stdscr.addstr(f'height: {custom_height}')
+                custom_ratio = raw_input(stdscr, 9, 0, "ratio: ").lower()
+                if custom_ratio == '':
+                    custom_ratio = str(config['setup']['beginner']['ratio'])
+            board = Board(int(custom_width), int(custom_height), float(custom_ratio), no_flash)
+            break
 
     main_loop(stdscr, board, config)
 
