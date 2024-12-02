@@ -14,7 +14,6 @@ import yaml
 # high score system
 # show high score for each difficulty on splash
 # show total time played(?)
-# add help menu to show controls
 # better win lose screen
 # update readme with any new changes
 
@@ -23,6 +22,7 @@ class GameState(Enum):
     PLAYING = 0
     WON = 1
     LOST = 2
+    PAUSED = 3
 
 
 class Cell(Enum):
@@ -56,6 +56,7 @@ class Board:
     def __init__(self, width: int, height: int, mine_ratio: float, no_flash: bool = False, custom: bool = False) -> None:
         self.start_time = None
         self.end_time = None
+        self.cum_time = datetime.timedelta(0)
         self.n_wins = 0
         self.n_games = 0
         self.width = width
@@ -72,10 +73,12 @@ class Board:
         self.mines = []
         self.is_first_click = True
         self.state = GameState.PLAYING
+        self.previous_state = self.state
 
     def reset(self) -> None:
         self.start_time = None
         self.end_time = None
+        self.cum_time = datetime.timedelta(0)
         self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
         self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
         self.cursor = (self.height // 2, self.width // 2)
@@ -83,8 +86,22 @@ class Board:
         self.mines = []
         self.is_first_click = True
         self.state = GameState.PLAYING
+        self.previous_state = self.state
         if not self.no_flash:
             curses.flash()
+
+    def pause(self) -> None:
+        if self.state == GameState.PAUSED:
+            # unpause
+            if not self.is_first_click:
+                self.start_time = datetime.datetime.now()
+            self.state = self.previous_state
+        else:
+            # pause
+            if not self.is_first_click:
+                self.cum_time = self.cum_time + (datetime.datetime.now() - self.start_time)
+            self.previous_state = self.state
+            self.state = GameState.PAUSED
 
     def populate(self) -> None:
         choices = [x for x in self.locations if x != self.cursor]
@@ -112,6 +129,8 @@ class Board:
         return total
 
     def set_cursor_from_mouse(self, x: int, y: int) -> None:
+        if not self.state == GameState.PLAYING:
+            return
         # x and y are screen coordinates
         new_row = y - 2  # two for timer and win/loss counts
         new_col = (x // 3)  # to account for [ ] style
@@ -120,10 +139,12 @@ class Board:
             self.cursor = loc
 
     def move_cursor(self, x: int, y: int) -> None:
+        if not self.state == GameState.PLAYING:
+            return
         new_row = self.cursor[0] + y
         new_col = self.cursor[1] + x
         loc = (new_row % self.height, new_col % self.width)
-        if self.in_bounds(loc) and self.state == GameState.PLAYING:
+        if self.in_bounds(loc):
             self.cursor = loc
 
     def up(self) -> None:
@@ -154,6 +175,9 @@ class Board:
         self.my_board = [[Cell.OPENED for x in range(self.width)] for y in range(self.height)]
 
     def reveal(self) -> None:
+        if not self.state == GameState.PLAYING:
+            return
+
         curses.beep()
         if self.is_first_click:
             self.populate()
@@ -161,7 +185,7 @@ class Board:
 
         row, col = self.cursor
 
-        if not self.in_bounds(self.cursor) or self.state != GameState.PLAYING:
+        if not self.in_bounds(self.cursor):
             return
 
         if self.my_board[row][col] == Cell.OPENED:
@@ -212,6 +236,8 @@ class Board:
             self.won()
 
     def flag(self) -> None:
+        if not self.state == GameState.PLAYING:
+            return
         row, col = self.cursor
         if not self.in_bounds(self.cursor):
             return
@@ -235,12 +261,12 @@ class Board:
         stdscr.addstr(f'{"WINS: " + str(self.n_wins):^{(self.width * 3) // 2}}')
         stdscr.addstr(f'{"LOSSES: " + str(self.n_games - self.n_wins):^{(self.width * 3) // 2}}\n')
         if self.start_time is not None and self.state == GameState.PLAYING:
-            time = Board.zero_time + (datetime.datetime.now() - self.start_time)
-        elif self.state != GameState.PLAYING:
-            time = Board.zero_time + (self.end_time - self.start_time)
+            _time = Board.zero_time + self.cum_time + (datetime.datetime.now() - self.start_time)
+        elif self.state == GameState.WON or self.state == GameState.LOST:
+            _time = Board.zero_time + self.cum_time + (self.end_time - self.start_time)
         else:
-            time = Board.zero_time
-        time_str = f'{time:%H:%M:%S.%f}'[:-4]
+            _time = Board.zero_time + self.cum_time
+        time_str = f'{_time:%H:%M:%S.%f}'[:-4]
         stdscr.addstr(f'{time_str:^{self.width * 3}}\n')
         for rid, row in enumerate(self.my_board):
             for cid, cell in enumerate(row):
@@ -265,20 +291,18 @@ class Board:
                 cell.display(stdscr, symbols)
                 stdscr.addstr(']')
             stdscr.addstr('\n')
-        if self.state == GameState.PLAYING:
-            stdscr.addstr('Use arrow keys to move\n')
-            stdscr.addstr('Press "F" to flag and "Space" to reveal')
-        elif self.state == GameState.LOST:
+        stdscr.addstr('\n')
+        if self.state == GameState.LOST:
             stdscr.addstr('You Lose!\n')
-            stdscr.addstr('Press "R" to restart')
+            stdscr.addstr('Press "R" to restart\n\n')
         elif self.state == GameState.WON:
             stdscr.addstr('You Win!\n')
-            stdscr.addstr('Press "R" to restart')
+            stdscr.addstr('Press "R" to restart\n\n')
 
 
 def init_colors(colors: {str: dict}) -> None:
-    defaults: {str, int} = colors['default']
-    rgbs: {str: [int]} = colors['rgb']
+    defaults: {str, int} = colors['DEFAULT']
+    rgbs: {str: [int]} = colors['RGB']
     if curses.has_colors():
         curses.start_color()
         curses.use_default_colors()
@@ -302,13 +326,13 @@ def setup(stdscr: curses.window) -> None:
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
 
-    min_width = config['setup']['min_width']
-    min_height = config['setup']['min_height']
-    max_width = config['setup']['max_width']
-    max_height = config['setup']['max_height']
-    default_width = config['setup']['beginner']['width']
-    default_height = config['setup']['beginner']['height']
-    default_ratio = config['setup']['beginner']['ratio']
+    min_width = config['SETUP']['MIN_WIDTH']
+    min_height = config['SETUP']['MIN_HEIGHT']
+    max_width = config['SETUP']['MAX_WIDTH']
+    max_height = config['SETUP']['MAX_HEIGHT']
+    default_width = config['SETUP']['BEGINNER']['WIDTH']
+    default_height = config['SETUP']['BEGINNER']['HEIGHT']
+    default_ratio = config['SETUP']['BEGINNER']['RATIO']
     parser = argparse.ArgumentParser()
     parser.add_argument('-W', '--width', default=default_width, type=int)
     parser.add_argument('-H', '--height', default=default_height, type=int)
@@ -334,7 +358,7 @@ def setup(stdscr: curses.window) -> None:
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
 
-    init_colors(config['look']['colors'])
+    init_colors(config["LOOK"]['COLORS'])
     curses.mousemask(curses.ALL_MOUSE_EVENTS)
     stdscr.nodelay(True)
     try:
@@ -370,16 +394,40 @@ def logo(stdscr: curses.window) -> None:
     stdscr.addstr(f'\n')
 
 
+def control_str(config1: str | None, config2: str | None = None) -> str:
+    if config1 == ' ':
+        config1 = 'space'
+    if config2 == ' ':
+        config2 = 'space'
+
+    if config1 is not None and config2 is not None:
+        return f'[{config1.upper()}] OR [{config2.upper()}]'
+    if config1 is not None:
+        return f'[{config1.upper()}]'
+    if config2 is not None:
+        return f'[{config2.upper()}]'
+    return '{NO KEY SET}'
+
+
+def show_help(stdscr: curses.window, config: dict) -> None:
+    keyboard = config["CONTROLS"]["KEYBOARD"]
+    mouse = config["CONTROLS"]["MOUSE"]
+    stdscr.clear()
+    stdscr.addstr('HELP\n\n')
+    for command in keyboard.keys():
+        stdscr.addstr(f'{command + ":":<8} {control_str(keyboard[command], mouse[command])}\n')
+
+
 def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
-    beginner_width = config["setup"]["beginner"]["width"]
-    beginner_height = config["setup"]["beginner"]["height"]
-    beginner_ratio = config["setup"]["beginner"]["ratio"]
-    intermediate_width = config["setup"]["intermediate"]["width"]
-    intermediate_height = config["setup"]["intermediate"]["height"]
-    intermediate_ratio = config["setup"]["intermediate"]["ratio"]
-    expert_width = config["setup"]["expert"]["width"]
-    expert_height = config["setup"]["expert"]["height"]
-    expert_ratio = config["setup"]["expert"]["ratio"]
+    beginner_width = config["SETUP"]["BEGINNER"]["WIDTH"]
+    beginner_height = config["SETUP"]["BEGINNER"]["HEIGHT"]
+    beginner_ratio = config["SETUP"]["BEGINNER"]["RATIO"]
+    intermediate_width = config["SETUP"]["INTERMEDIATE"]["WIDTH"]
+    intermediate_height = config["SETUP"]["INTERMEDIATE"]["HEIGHT"]
+    intermediate_ratio = config["SETUP"]["INTERMEDIATE"]["RATIO"]
+    expert_width = config["SETUP"]["EXPERT"]["WIDTH"]
+    expert_height = config["SETUP"]["EXPERT"]["HEIGHT"]
+    expert_ratio = config["SETUP"]["EXPERT"]["RATIO"]
 
     stdscr.clear()
     logo(stdscr)
@@ -403,7 +451,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
     for row in display:
         for cell in row:
             stdscr.addstr('[')
-            cell.display(stdscr, config['look']['symbols'])
+            cell.display(stdscr, config["LOOK"]["SYMBOLS"])
             stdscr.addstr(']')
         stdscr.addstr('\n')
     stdscr.refresh()
@@ -413,7 +461,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             key = stdscr.getkey(0, 0)
         except Exception as e:
             key = curses.ERR
-        if key == config['controls']['keyboard']['exit']:
+        if key == config["CONTROLS"]["KEYBOARD"]["EXIT"]:
             curses.nocbreak()
             stdscr.keypad(False)
             curses.echo()
@@ -431,22 +479,22 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             board = Board(int(expert_width), int(expert_height), float(expert_ratio), no_flash)
             break
         elif key == '4':
-            min_width = config['setup']['min_width']
-            min_height = config['setup']['min_height']
-            max_width = config['setup']['max_width']
-            max_height = config['setup']['max_height']
+            min_width = config["SETUP"]['MIN_WIDTH']
+            min_height = config["SETUP"]['MIN_HEIGHT']
+            max_width = config["SETUP"]['MAX_WIDTH']
+            max_height = config["SETUP"]['MAX_HEIGHT']
             custom_width = ''
             while not custom_width.isdigit():
                 stdscr.clear()
                 logo(stdscr)
-                custom_width = raw_input(stdscr, 7, 0, f"width (min: {config['setup']['min_width']}, max: {config['setup']['max_width']}): ").lower()
+                custom_width = raw_input(stdscr, 7, 0, f"width (min: {min_width}, max: {max_width}): ").lower()
                 if custom_width.isdigit():
                     if min_width and int(custom_width) < min_width:
                         custom_width = 'NaN'
                     if max_width and int(custom_width) > max_width:
                         custom_width = 'NaN'
                 if custom_width == '':
-                    custom_width = config['setup']['beginner']['width']
+                    custom_width = config["SETUP"]["BEGINNER"]["WIDTH"]
             custom_height = ''
             while not custom_height.isdigit():
                 stdscr.clear()
@@ -459,7 +507,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
                     if max_height and int(custom_height) > max_height:
                         custom_height = 'NaN'
                 if custom_height == '':
-                    custom_height = config['setup']['beginner']['height']
+                    custom_height = config["SETUP"]["BEGINNER"]["HEIGHT"]
             custom_ratio = ''
             while not custom_ratio.replace('.', '', 1).isdigit():
                 stdscr.clear()
@@ -471,7 +519,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
                     if float(custom_ratio) > 1 or float(custom_ratio) < 0:
                         custom_ratio = 'NaN'
                 if custom_ratio == '':
-                    custom_ratio = str(config['setup']['beginner']['ratio'])
+                    custom_ratio = str(config["SETUP"]["BEGINNER"]["RATIO"])
             board = Board(int(custom_width), int(custom_height), float(custom_ratio), no_flash, custom=True)
             break
 
@@ -480,9 +528,10 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
 
 
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
-    symbols = config['look']['symbols']
-    keyboard = config['controls']['keyboard']
-    mouse = config['controls']['mouse']
+    symbols = config["LOOK"]["SYMBOLS"]
+    keyboard = config["CONTROLS"]["KEYBOARD"]
+    mouse = config["CONTROLS"]["MOUSE"]
+    help_str = control_str(keyboard["HELP"], mouse["HELP"])
     stdscr.clear()
     board.display(stdscr, symbols)
     stdscr.refresh()
@@ -492,66 +541,76 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             key = stdscr.getkey(0, 0)
         except Exception as e:
             key = curses.ERR
-        if key == keyboard['exit']:
+        if key == keyboard["EXIT"]:
             break
-        elif key == keyboard['left']:
+        elif key == keyboard["HELP"]:
+            board.pause()
+            show_help(stdscr, config)
+        elif key == keyboard["LEFT"]:
             board.left()
-        elif key == keyboard['right']:
+        elif key == keyboard["RIGHT"]:
             board.right()
-        elif key == keyboard['up']:
+        elif key == keyboard["UP"]:
             board.up()
-        elif key == keyboard['down']:
+        elif key == keyboard["DOWN"]:
             board.down()
-        elif key == keyboard['reveal']:
+        elif key == keyboard["REVEAL"]:
             board.reveal()
-        elif key == keyboard['flag']:
+        elif key == keyboard["FLAG"]:
             board.flag()
-        elif key == keyboard['reset']:
+        elif key == keyboard["RESET"]:
             board.reset()
-        elif key == keyboard['home']:
+        elif key == keyboard["HOME"]:
             board.home()
-        elif key == keyboard['end']:
+        elif key == keyboard["END"]:
             board.end()
-        elif key == keyboard['floor']:
+        elif key == keyboard["FLOOR"]:
             board.floor()
-        elif key == keyboard['ceiling']:
+        elif key == keyboard["CEILING"]:
             board.ceiling()
         elif key == 'KEY_MOUSE':
             try:
                 _, mx, my, _, bstate = curses.getmouse()
-                if mouse['exit'] and (bstate & getattr(curses, mouse['exit'])):
+                if mouse["EXIT"] and (bstate & getattr(curses, mouse["EXIT"])):
                     break
-                elif mouse['left'] and (bstate & getattr(curses, mouse['left'])):
+                elif mouse["HELP"] and (bstate & getattr(curses, mouse["HELP"])):
+                    board.pause()
+                    show_help(stdscr, config)
+                elif mouse["LEFT"] and (bstate & getattr(curses, mouse["LEFT"])):
                     board.left()
-                elif mouse['right'] and (bstate & getattr(curses, mouse['right'])):
+                elif mouse["RIGHT"] and (bstate & getattr(curses, mouse["RIGHT"])):
                     board.right()
-                elif mouse['up'] and (bstate & getattr(curses, mouse['up'])):
+                elif mouse["UP"] and (bstate & getattr(curses, mouse["UP"])):
                     board.up()
-                elif mouse['down'] and (bstate & getattr(curses, mouse['down'])):
+                elif mouse["DOWN"] and (bstate & getattr(curses, mouse["DOWN"])):
                     board.down()
-                elif mouse['reveal'] and (bstate & getattr(curses, mouse['reveal'])):
+                elif mouse["REVEAL"] and (bstate & getattr(curses, mouse["REVEAL"])):
                     board.set_cursor_from_mouse(mx, my)
                     board.reveal()
-                elif mouse['flag'] and (bstate & getattr(curses, mouse['flag'])):
+                elif mouse["FLAG"] and (bstate & getattr(curses, mouse["FLAG"])):
                     board.set_cursor_from_mouse(mx, my)
                     board.flag()
-                elif mouse['home'] and (bstate & getattr(curses, mouse['home'])):
+                elif mouse["HOME"] and (bstate & getattr(curses, mouse["HOME"])):
                     board.home()
-                elif mouse['end'] and (bstate & getattr(curses, mouse['end'])):
+                elif mouse["END"] and (bstate & getattr(curses, mouse["END"])):
                     board.end()
-                elif mouse['floor'] and (bstate & getattr(curses, mouse['floor'])):
+                elif mouse["FLOOR"] and (bstate & getattr(curses, mouse["FLOOR"])):
                     board.floor()
-                elif mouse['ceiling'] and (bstate & getattr(curses, mouse['ceiling'])):
+                elif mouse["CEILING"] and (bstate & getattr(curses, mouse["CEILING"])):
                     board.ceiling()
             except:
                 pass
         elif key == curses.ERR:
-            board.display(stdscr, symbols)
-            stdscr.noutrefresh()
-            stdscr.refresh()
+            if board.state != GameState.PAUSED:
+                board.display(stdscr, symbols)
+                stdscr.addstr(f'Press {help_str} for help.')
+                stdscr.noutrefresh()
+                stdscr.refresh()
             continue
-        stdscr.clear()
-        board.display(stdscr, symbols)
+        if board.state != GameState.PAUSED:
+            stdscr.clear()
+            board.display(stdscr, symbols)
+            stdscr.addstr(f'Press {help_str} for help.')
         stdscr.refresh()
 
     curses.nocbreak()

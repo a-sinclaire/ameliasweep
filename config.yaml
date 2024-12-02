@@ -1,51 +1,53 @@
-controls:
-  keyboard:
-    left: 'KEY_LEFT'
-    right: 'KEY_RIGHT'
-    up: 'KEY_UP'
-    down: 'KEY_DOWN'
-    reveal: ' '
-    flag: 'f'
-    reset: 'r'
-    home: 'KEY_HOME'
-    end: 'KEY_END'
-    ceiling: 'KEY_PPAGE'
-    floor: 'KEY_NPAGE'
-    exit: 'q'
-  mouse:
-    left: null
-    right: null
-    up: null
-    down: null
-    reveal: 'BUTTON1_CLICKED'
-    flag: 'BUTTON3_CLICKED'
-    reset: null
-    home: null
-    end: null
-    ceiling: null
-    floor: null
-    exit: null
+CONTROLS:
+  KEYBOARD:
+    LEFT: 'KEY_LEFT'
+    RIGHT: 'KEY_RIGHT'
+    UP: 'KEY_UP'
+    DOWN: 'KEY_DOWN'
+    REVEAL: ' '
+    FLAG: 'f'
+    RESET: 'r'
+    HOME: 'KEY_HOME'
+    END: 'KEY_END'
+    CEILING: 'KEY_PPAGE'
+    FLOOR: 'KEY_NPAGE'
+    HELP: 'h'
+    EXIT: 'q'
+  MOUSE:
+    LEFT: NULL
+    RIGHT: NULL
+    UP: NULL
+    DOWN: NULL
+    REVEAL: 'BUTTON1_CLICKED'
+    FLAG: 'BUTTON3_CLICKED'
+    RESET: NULL
+    HOME: NULL
+    END: NULL
+    CEILING: NULL
+    FLOOR: NULL
+    HELP: NULL
+    EXIT: NULL
 
-setup:
-  min_width: 2
-  min_height: 2
-  max_width: null
-  max_height: null
-  beginner:
-    width: 09
-    height: 09
-    ratio: 0.123
-  intermediate:
-    width: 16
-    height: 16
-    ratio: 0.156
-  expert:
-    width: 30
-    height: 16
-    ratio: 0.206
+SETUP:
+  MIN_WIDTH: 2
+  MIN_HEIGHT: 2
+  MAX_WIDTH: NULL
+  MAX_HEIGHT: NULL
+  BEGINNER:
+    WIDTH: 09
+    HEIGHT: 09
+    RATIO: 0.123
+  INTERMEDIATE:
+    WIDTH: 16
+    HEIGHT: 16
+    RATIO: 0.156
+  EXPERT:
+    WIDTH: 30
+    HEIGHT: 16
+    RATIO: 0.206
 
-look:
-  symbols:
+LOOK:
+  SYMBOLS:
     BLANK: ' '
     ONE: '1'
     TWO: '2'
@@ -59,29 +61,29 @@ look:
     FLAG: '¶'
     UNOPENED: '■'
 
-  colors:
-    default:
-      one: 4
-      two: 2
-      three: 1
-      four: 3
-      five: 5
-      six: 6
-      seven: 0
-      eight: 7
-      selector: 3
-      lose: 1
-      win: 2
+  COLORS:
+    DEFAULT:
+      ONE: 4
+      TWO: 2
+      THREE: 1
+      FOUR: 3
+      FIVE: 5
+      SIX: 6
+      SEVEN: 0
+      EIGHT: 7
+      SELECTOR: 3
+      LOSE: 1
+      WIN: 2
 
-    rgb:
-      one: [0, 0, 1000]
-      two: [0, 500, 0]
-      three: [1000, 0, 0]
-      four: [0, 0, 500]
-      five: [500, 0, 0]
-      six: [0, 500, 500]
-      seven: [0, 0, 0]
-      eight: [500, 500, 500]
-      selector: [1000, 1000, 0]
-      lose: [1000, 0, 0]
-      win: [0, 1000, 0]
+    RGB:
+      ONE: [0, 0, 1000]
+      TWO: [0, 500, 0]
+      THREE: [1000, 0, 0]
+      FOUR: [0, 0, 500]
+      FIVE: [500, 0, 0]
+      SIX: [0, 500, 500]
+      SEVEN: [0, 0, 0]
+      EIGHT: [500, 500, 500]
+      SELECTOR: [1000, 1000, 0]
+      LOSE: [1000, 0, 0]
+      WIN: [0, 1000, 0]
