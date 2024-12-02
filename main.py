@@ -1,7 +1,9 @@
 # Amelia Sinclaire 2024
 import argparse
+import csv
 import curses
 import datetime
+import operator
 import time
 from enum import Enum
 import itertools
@@ -11,11 +13,24 @@ import yaml
 
 
 # TODO:
-# high score system
-# show high score for each difficulty on splash
-# show total time played(?)
+# show high scores when you get a new high score.
+# add dummy default high scores.
+# show highest score for each difficulty on splash
 # better win lose screen
+# show total time played(?)
 # update readme with any new changes
+
+
+class Difficulty(Enum):
+    BEGINNER = 1
+    INTERMEDIATE = 2
+    EXPERT = 3
+    CUSTOM = 4
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class GameState(Enum):
@@ -53,10 +68,11 @@ class Board:
     neighbors = [x for x in itertools.product(range(-1, 2), range(-1, 2)) if x != (0, 0)]
     zero_time = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
-    def __init__(self, width: int, height: int, mine_ratio: float, no_flash: bool = False, custom: bool = False) -> None:
+    def __init__(self, width: int, height: int, mine_ratio: float, difficulty: Difficulty, config: dict, stdscr: curses.window, no_flash: bool = False) -> None:
         self.start_time = None
         self.end_time = None
         self.cum_time = datetime.timedelta(0)
+        self.score = datetime.timedelta(0)
         self.n_wins = 0
         self.n_games = 0
         self.width = width
@@ -65,6 +81,10 @@ class Board:
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
         self.no_flash = no_flash
+        self.difficulty = difficulty
+        self.hs_config = config['HIGHSCORES']
+        self.symbols = config["LOOK"]["SYMBOLS"]
+        self.stdscr = stdscr
 
         self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
         self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
@@ -79,6 +99,7 @@ class Board:
         self.start_time = None
         self.end_time = None
         self.cum_time = datetime.timedelta(0)
+        self.score = datetime.timedelta(0)
         self.real_board = [[Cell.BLANK for x in range(self.width)] for y in range(self.height)]
         self.my_board = [[Cell.UNOPENED for x in range(self.width)] for y in range(self.height)]
         self.cursor = (self.height // 2, self.width // 2)
@@ -223,10 +244,46 @@ class Board:
     def won(self) -> None:
         self.state = GameState.WON
         self.end_time = datetime.datetime.now()
+        self.score = self.cum_time + (self.end_time - self.start_time)
         self.n_wins += 1
         self.n_games += 1
         for m in self.mines:
             self.my_board[m[0]][m[1]] = Cell.FLAG
+
+        # Update highscores
+        highscore_data = []
+        with open('highscores.csv', 'r') as csvfile:
+            reader = csv.reader(csvfile, delimiter=' ')
+            for row in reader:
+                if ''.join(row).strip() == '':
+                    continue
+                highscore_data.append(row)
+        for idx, hs in enumerate(highscore_data):
+            t = datetime.datetime.strptime(hs[2], '%H:%M:%S.%f')
+            highscore_data[idx][2] = (datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second, microseconds=t.microsecond))
+            highscore_data[idx][0] = Difficulty[hs[0]]
+        scores = [x for x in highscore_data if x == self.difficulty.name]
+        if all(self.score < s for s in scores) or scores is None or len(scores) < self.hs_config[self.difficulty.name + '_MAX']:
+            # NEW HIGH SCORE!
+            self.display()
+            self.stdscr.addstr('NEW HIGHSCORE!!', curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK)
+            name = ''.join(raw_input(self.stdscr, self.height + 7, 0, prompt='Enter Name:').upper().split())[:self.hs_config['MAX_NAME_LENGTH']]
+            highscore_data.append([self.difficulty, name, self.score])
+            highscore_data = sorted(highscore_data, key=operator.itemgetter(0, 2))
+            highscore_data = [[hs[0].name, hs[1], f'{Board.zero_time + hs[2]:%H:%M:%S.%f}'] for hs in highscore_data]
+
+            total_list = []
+            for difficulty in Difficulty:
+                total_list.append([x for x in highscore_data if x[0] == difficulty.name])
+
+            with open('highscores.csv', 'w') as csvfile:
+                writer = csv.writer(csvfile, delimiter=' ')
+                for cat in total_list:
+                    if not cat:
+                        continue
+                    for hs in cat[:self.hs_config[cat[0][0] + '_MAX']]:
+                        writer.writerow(hs)
+                    writer.writerow('')
 
     def check_win(self) -> None:
         if self.state != GameState.PLAYING:
@@ -248,7 +305,7 @@ class Board:
             self.my_board[row][col] = Cell.UNOPENED
             return
 
-    def display(self, stdscr: curses.window, symbols: {str: str}) -> None:
+    def display(self) -> None:
         if curses.has_colors():
             selector_format = curses.A_BLINK | curses.color_pair(9) | curses.A_BOLD
             death_format = curses.A_BLINK | curses.color_pair(10) | curses.A_BOLD
@@ -258,8 +315,8 @@ class Board:
             death_format = curses.A_REVERSE | curses.color_pair(10) | curses.A_BOLD
             win_format = curses.A_REVERSE | curses.color_pair(11) | curses.A_BOLD
 
-        stdscr.addstr(f'{"WINS: " + str(self.n_wins):^{(self.width * 3) // 2}}')
-        stdscr.addstr(f'{"LOSSES: " + str(self.n_games - self.n_wins):^{(self.width * 3) // 2}}\n')
+        self.stdscr.addstr(f'{"WINS: " + str(self.n_wins):^{(self.width * 3) // 2}}')
+        self.stdscr.addstr(f'{"LOSSES: " + str(self.n_games - self.n_wins):^{(self.width * 3) // 2}}\n')
         if self.start_time is not None and self.state == GameState.PLAYING:
             _time = Board.zero_time + self.cum_time + (datetime.datetime.now() - self.start_time)
         elif self.state == GameState.WON or self.state == GameState.LOST:
@@ -267,37 +324,37 @@ class Board:
         else:
             _time = Board.zero_time + self.cum_time
         time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-        stdscr.addstr(f'{time_str:^{self.width * 3}}\n')
+        self.stdscr.addstr(f'{time_str:^{self.width * 3}}\n')
         for rid, row in enumerate(self.my_board):
             for cid, cell in enumerate(row):
                 if cell == Cell.OPENED:
                     cell = self.real_board[rid][cid]
                 if self.cursor == (rid, cid) and self.state == GameState.PLAYING:
-                    stdscr.addstr('[', selector_format)
-                    cell.display(stdscr, symbols)
-                    stdscr.addstr(']', selector_format)
+                    self.stdscr.addstr('[', selector_format)
+                    cell.display(self.stdscr, self.symbols)
+                    self.stdscr.addstr(']', selector_format)
                     continue
                 if self.death == (rid, cid) and self.state == GameState.LOST:
-                    stdscr.addstr('[', death_format)
-                    cell.display(stdscr, symbols)
-                    stdscr.addstr(']', death_format)
+                    self.stdscr.addstr('[', death_format)
+                    cell.display(self.stdscr, self.symbols)
+                    self.stdscr.addstr(']', death_format)
                     continue
                 if cell == Cell.FLAG and self.state == GameState.WON:
-                    stdscr.addstr('[', win_format)
-                    cell.display(stdscr, symbols, win_format)
-                    stdscr.addstr(']', win_format)
+                    self.stdscr.addstr('[', win_format)
+                    cell.display(self.stdscr, self.symbols, win_format)
+                    self.stdscr.addstr(']', win_format)
                     continue
-                stdscr.addstr('[')
-                cell.display(stdscr, symbols)
-                stdscr.addstr(']')
-            stdscr.addstr('\n')
-        stdscr.addstr('\n')
+                self.stdscr.addstr('[')
+                cell.display(self.stdscr, self.symbols)
+                self.stdscr.addstr(']')
+            self.stdscr.addstr('\n')
+        self.stdscr.addstr('\n')
         if self.state == GameState.LOST:
-            stdscr.addstr('You Lose!\n')
-            stdscr.addstr('Press "R" to restart\n\n')
+            self.stdscr.addstr('You Lose!\n')
+            self.stdscr.addstr('Press "R" to restart\n\n')
         elif self.state == GameState.WON:
-            stdscr.addstr('You Win!\n')
-            stdscr.addstr('Press "R" to restart\n\n')
+            self.stdscr.addstr('You Win!\n')
+            self.stdscr.addstr('Press "R" to restart\n\n')
 
 
 def init_colors(colors: {str: dict}) -> None:
@@ -369,7 +426,7 @@ def setup(stdscr: curses.window) -> None:
     if explicit.width or explicit.height or explicit.ratio:
         if not explicit.ratio:
             args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
-        board = Board(args.width, args.height, args.ratio, args.no_flash)
+        board = Board(args.width, args.height, args.ratio, Difficulty.CUSTOM, config, stdscr, args.no_flash)
         main_loop(stdscr, board, config)
     else:
         splash(stdscr, config, args.no_flash)
@@ -378,9 +435,11 @@ def setup(stdscr: curses.window) -> None:
 # https://stackoverflow.com/a/21785167
 def raw_input(stdscr: curses.window, r: int, c: int, prompt: str) -> str:
     curses.echo()
+    stdscr.nodelay(False)
     stdscr.addstr(r, c, prompt)
     stdscr.refresh()
     inp = stdscr.getstr(r + 1, c, 20)
+    stdscr.nodelay(True)
     return inp.decode()   # ^^^^  reading input at next line
 
 
@@ -470,13 +529,13 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             curses.endwin()
             exit()
         if key == '1':
-            board = Board(int(beginner_width), int(beginner_height), float(beginner_ratio), no_flash)
+            board = Board(int(beginner_width), int(beginner_height), float(beginner_ratio), Difficulty.BEGINNER, config, stdscr, no_flash)
             break
         elif key == '2':
-            board = Board(int(intermediate_width), int(intermediate_height), float(intermediate_ratio), no_flash)
+            board = Board(int(intermediate_width), int(intermediate_height), float(intermediate_ratio), Difficulty.INTERMEDIATE, config, stdscr, no_flash)
             break
         elif key == '3':
-            board = Board(int(expert_width), int(expert_height), float(expert_ratio), no_flash)
+            board = Board(int(expert_width), int(expert_height), float(expert_ratio), Difficulty.EXPERT, config, stdscr, no_flash)
             break
         elif key == '4':
             min_width = config["SETUP"]['MIN_WIDTH']
@@ -520,7 +579,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
                         custom_ratio = 'NaN'
                 if custom_ratio == '':
                     custom_ratio = str(config["SETUP"]["BEGINNER"]["RATIO"])
-            board = Board(int(custom_width), int(custom_height), float(custom_ratio), no_flash, custom=True)
+            board = Board(int(custom_width), int(custom_height), float(custom_ratio), Difficulty.CUSTOM, config, stdscr, no_flash)
             break
 
     curses.noecho()
@@ -528,12 +587,11 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
 
 
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
-    symbols = config["LOOK"]["SYMBOLS"]
     keyboard = config["CONTROLS"]["KEYBOARD"]
     mouse = config["CONTROLS"]["MOUSE"]
     help_str = control_str(keyboard["HELP"], mouse["HELP"])
     stdscr.clear()
-    board.display(stdscr, symbols)
+    board.display()
     stdscr.refresh()
 
     while True:
@@ -602,14 +660,14 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 pass
         elif key == curses.ERR:
             if board.state != GameState.PAUSED:
-                board.display(stdscr, symbols)
+                board.display()
                 stdscr.addstr(f'Press {help_str} for help.')
                 stdscr.noutrefresh()
                 stdscr.refresh()
             continue
         if board.state != GameState.PAUSED:
             stdscr.clear()
-            board.display(stdscr, symbols)
+            board.display()
             stdscr.addstr(f'Press {help_str} for help.')
         stdscr.refresh()
 

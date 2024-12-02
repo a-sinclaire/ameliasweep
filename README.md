@@ -44,13 +44,18 @@ If any of your controls are not working it could be due to your terminal. You ca
 *Hint: you can use `Home`, `End`, `PageUp`, and `PageDown` to traverse faster*
 
 ## Game Customization:
-Highscores _(not yet implemented)_ can only be saved for the preset difficulties. You can modify what your own presets look like by modifying the values in the `config.yaml` file under `setup`. This allows you to define the board height, width, and ratio of mines. The ratio should be a value between 0 and 1.
+Highscores can only be distinguished for the preset difficulties. Custom games all have the label `CUSTOM`. You can modify what your own presets look like by modifying the values in the `config.yaml` file under `SETUP`. This allows you to define the board height, width, and ratio of mines. The ratio should be a value between 0 and 1.
 
-Note: If you modify these values the highscores will persist for the old settings. You may want to clear out the highscore files. *(Again, these don't exist yet)*
+Note: If you modify these values the highscores will persist for the old settings. You may want to clear out the highscore file.
+
+## Highscore Customization
+By default, saved names will be shortened to 6 characters. And only the top 10 in each category will be saved. If there are less then 10 highscores in a category then any score will count as a highscore.
+
+The name length and highscore list length can be modified in the `config.yaml` under the section labeled `HIGHSCORES`.
 
 ## Control Customization:
 ### Keyboard:
-In the configuration file there is a section labeled `keyboard` under `controls` which allows you to change the default key bindings for each action.
+In the configuration file there is a section labeled `KEYBOARD` under `CONTROLS` which allows you to change the default key bindings for each action.
 
 The notation used is `curses` KeyCodes.\
 A list of available `curses` Keycodes can be found at the bottom of this `README.md`.
@@ -77,9 +82,9 @@ if __name__ == '__main__':
 You can use `CTRL+C` to exit this script.
 
 ### Mouse:
-In the configuration file there is a section labeled `mouse` under `controls` which allows you to change the default mouse bindings for each action.
+In the configuration file there is a section labeled `MOUSE` under `CONTROLS` which allows you to change the default mouse bindings for each action.
 
-By default, the only actions enabled on the mouse are opening and flagging cells. A value of `null` indicates it is not set. 
+By default, the only actions enabled on the mouse are opening and flagging cells. A value of `NULL` indicates it is not set. 
 
 A list of available `curses` MouseCodes can be found at the bottom of this `README.md`.
 
@@ -87,17 +92,17 @@ A list of available `curses` MouseCodes can be found at the bottom of this `READ
 
 ## Look Customization:
 ### Symbols:
-In the configuration file there is a section labeled `symbols` under `look` which allows you to change the default symbols used in the program. This will allow you a high level of customization.
+In the configuration file there is a section labeled `SYMBOLS` under `LOOK` which allows you to change the default symbols used in the program. This will allow you a high level of customization.
 
 ### Colors:
-In the configuration file there is a section labeled `colors` under `look` which allows you to change the default colors used in the program.
+In the configuration file there is a section labeled `COLORS` under `LOOK` which allows you to change the default colors used in the program.
 
 If your terminal does not support color then these values do not matter.
 
 Some terminals support changing color values, which allows us to set custom RGB values.
-You will see a subsection labeled `rgb` which allows you to change these values. The values are in `[Red, Green, Blue]` notation, and each color ranges from 0-1000 **(not 255)**.
+You will see a subsection labeled `RGB` which allows you to change these values. The values are in `[Red, Green, Blue]` notation, and each color ranges from 0-1000 **(not 255)**.
 
-If your terminal does not support rgb colors then it will fall back on the deafult colors, which can be seen in the subsection labeled `default`. These are color codes.
+If your terminal does not support rgb colors then it will fall back on the default colors, which can be seen in the subsection labeled `DEFAULT`. These are color codes.
 
 The following are the 8 basic colors:\
 `0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white`
