@@ -262,6 +262,11 @@ BUTTON4_RELEASED         mouse button 4 up
 BUTTON4_CLICKED          mouse button 4 clicked
 BUTTON4_DOUBLE_CLICKED   mouse button 4 double clicked
 BUTTON4_TRIPLE_CLICKED   mouse button 4 triple clicked
+BUTTON5_PRESSED          mouse button 5 down
+BUTTON5_RELEASED         mouse button 5 up
+BUTTON5_CLICKED          mouse button 5 clicked
+BUTTON5_DOUBLE_CLICKED   mouse button 5 double clicked
+BUTTON5_TRIPLE_CLICKED   mouse button 5 triple clicked
 BUTTON_SHIFT             shift was down during button state change
 BUTTON_CTRL              control was down during button state change
 BUTTON_ALT               alt was down during button state change
