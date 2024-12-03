@@ -14,10 +14,11 @@ import yaml
 
 
 # TODO:
+# resize entire game (if possible) based on terminal size
+# show reset key on game end
 # put config in canonical location
 # revert back to normal terminal colors on exit
 # better win lose screen
-# do something about when the screen isn't big enough? it can cause a crash.
 # show total time played(?)
 # update readme with any new changes
 
@@ -65,6 +66,9 @@ class Cell(Enum):
             stdscr.addstr(symbols[self.name], color)
         else:
             stdscr.addstr(symbols[self.name])
+
+    def print(self, symbols):
+        return symbols[self.name]
 
     def __le__(self, other):
         if self.__class__ is other.__class__:
@@ -625,13 +629,72 @@ def raw_input(stdscr: curses.window, r: int, c: int, prompt: str) -> str:
 
 # TODO: decide on a logo
 def logo(stdscr: curses.window) -> None:
-    stdscr.addstr(f'\n')
-    stdscr.addstr(f'▗▖  ▗▖▗▞▀▚▖▗▞▀▚▖█ ▗▞▀▚▖▄   ▄ ▗▖  ▗▖▄ ▄▄▄▄  ▗▞▀▚▖\n')
-    stdscr.addstr(f'▐▛▚▞▜▌▐▛▀▀▘▐▛▀▀▘█ ▐▛▀▀▘█   █ ▐▛▚▞▜▌▄ █   █ ▐▛▀▀▘\n')
-    stdscr.addstr(f'▐▌  ▐▌▝▚▄▄▖▝▚▄▄▖█ ▝▚▄▄▖ ▀▀▀█ ▐▌  ▐▌█ █   █ ▝▚▄▄▖\n')
-    stdscr.addstr(f'▐▌  ▐▌          █      ▄   █ ▐▌  ▐▌█            \n')
-    stdscr.addstr(f'                        ▀▀▀                     \n')
-    stdscr.addstr(f'\n')
+    term_height, term_width = stdscr.getmaxyx()
+    options: [str] = [
+        # formatter:off
+        (f'\n'
+         f'  ▄▄▄▄███▄▄▄▄      ▄████████    ▄████████  ▄█          ▄████████ '
+         f'▄██   ▄     ▄▄▄▄███▄▄▄▄    ▄█  ███▄▄▄▄      ▄████████\n'
+         f'▄██▀▀▀███▀▀▀██▄   ███    ███   ███    ███ ███         ███    ███ '
+         f'███   ██▄ ▄██▀▀▀███▀▀▀██▄ ███  ███▀▀▀██▄   ███    ███\n'
+         f'███   ███   ███   ███    █▀    ███    █▀  ███         ███    █▀  '
+         f'███▄▄▄███ ███   ███   ███ ███▌ ███   ███   ███    █▀\n'
+         f'███   ███   ███  ▄███▄▄▄      ▄███▄▄▄     ███        ▄███▄▄▄     '
+         f'▀▀▀▀▀▀███ ███   ███   ███ ███▌ ███   ███  ▄███▄▄▄\n'
+         f'███   ███   ███ ▀▀███▀▀▀     ▀▀███▀▀▀     ███       ▀▀███▀▀▀     '
+         f'▄██   ███ ███   ███   ███ ███▌ ███   ███ ▀▀███▀▀▀\n'
+         f'███   ███   ███   ███    █▄    ███    █▄  ███         ███    █▄  '
+         f'███   ███ ███   ███   ███ ███  ███   ███   ███    █▄\n'
+         f'███   ███   ███   ███    ███   ███    ███ ███▌    ▄   ███    ███ '
+         f'███   ███ ███   ███   ███ ███  ███   ███   ███    ███\n'
+         f' ▀█   ███   █▀    ██████████   ██████████ █████▄▄██   ██████████  '
+         f'▀█████▀   ▀█   ███   █▀  █▀    ▀█   █▀    ██████████\n'
+         f'                                          ▀\n'
+         f'\n'),
+        # formatter:on
+        (f'\n'
+         f'▗▖  ▗▖▗▞▀▚▖▗▞▀▚▖█ ▗▞▀▚▖▄   ▄ ▗▖  ▗▖▄ ▄▄▄▄  ▗▞▀▚▖\n'
+         f'▐▛▚▞▜▌▐▛▀▀▘▐▛▀▀▘█ ▐▛▀▀▘█   █ ▐▛▚▞▜▌▄ █   █ ▐▛▀▀▘\n'
+         f'▐▌  ▐▌▝▚▄▄▖▝▚▄▄▖█ ▝▚▄▄▖ ▀▀▀█ ▐▌  ▐▌█ █   █ ▝▚▄▄▖\n'
+         f'▐▌  ▐▌          █      ▄   █ ▐▌  ▐▌█            \n'
+         f'                        ▀▀▀                     \n'
+         f'\n'),
+        (f'\n'  # @formatter:off
+         fr"  __  __         _          __  __ _          " + '\n'
+         fr" |  \/  |___ ___| |___ _  _|  \/  (_)_ _  ___ " + '\n'
+         fr" | |\/| / -_) -_) / -_) || | |\/| | | ' \/ -_)" + '\n'
+         fr" |_|  |_\___\___|_\___|\_, |_|  |_|_|_||_\___|" + '\n'
+         fr"                       |__/                   " + '\n'
+         f'\n'),  # formatter:on
+        (f'\n'
+         f' _____         _         _____ _         \n'
+         f'|     |___ ___| |___ _ _|     |_|___ ___ \n'
+         f'| | | | -_| -_| | -_| | | | | | |   | -_|\n'
+         f'|_|_|_|___|___|_|___|_  |_|_|_|_|_|_|___|\n'
+         f'                    |___|                \n'
+         f'\n'),
+        (f'\n'
+         f'╔╦╗┌─┐┌─┐┬  ┌─┐┬ ┬╔╦╗┬┌┐┌┌─┐\n'
+         f'║║║├┤ ├┤ │  ├┤ └┬┘║║║││││├┤ \n'
+         f'╩ ╩└─┘└─┘┴─┘└─┘ ┴ ╩ ╩┴┘└┘└─┘\n'
+         f'\n'),
+        (f'\n'
+         f'┳┳┓    ┓    ┳┳┓•    \n'
+         f'┃┃┃┏┓┏┓┃┏┓┓┏┃┃┃┓┏┓┏┓\n'
+         f'┛ ┗┗ ┗ ┗┗ ┗┫┛ ┗┗┛┗┗ \n'
+         f'           ┛        \n'
+         f'\n'),
+        f'\nMeeleyMine\n\n',
+        f'\nMM\n\n']
+
+    options.sort(key=lambda x: len(max(x.split('\n'))), reverse=True)
+
+    for op in options:
+        longest_line = max(op.split('\n'), key=len)
+        if term_width > len(longest_line):
+            for row in op:
+                stdscr.addstr(row)
+            return
 
 
 # used as a helper for help screen
@@ -662,6 +725,41 @@ def show_help(stdscr: curses.window, config: dict) -> None:
             f'{control_str(keyboard[command], mouse[command])}\n')
 
 
+def display_sample(stdscr: curses.window, config: dict) -> None:
+    term_height, term_width = stdscr.getmaxyx()
+    symbols = config["LOOK"]["SYMBOLS"]
+    display = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
+               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
+               [Cell.FIVE, Cell.SIX, Cell.SEVEN, Cell.EIGHT]]
+    out1 = ''
+    for row in display:
+        for cell in row:
+            out1 += '['
+            out1 += cell.print(symbols)
+            out1 += ']'
+        out1 += '\n'
+    if term_width > len(max(out1.split('\n'), key=len)):
+        for row in display:
+            for cell in row:
+                stdscr.addstr('[')
+                cell.display(stdscr, symbols)
+                stdscr.addstr(']')
+            stdscr.addstr('\n')
+        return
+    out2 = ''
+    for row in display:
+        for cell in row:
+            out2 += cell.print(symbols)
+        out2 += '\n'
+    if term_width > len(max(out2.split('\n'), key=len)):
+        for row in display:
+            for cell in row:
+                cell.display(stdscr, symbols)
+            stdscr.addstr('\n')
+        return
+    return
+
+
 def splash(stdscr: curses.window, config: dict) -> None:
     beginner_width = config["SETUP"]["BEGINNER"]["WIDTH"]
     beginner_height = config["SETUP"]["BEGINNER"]["HEIGHT"]
@@ -673,9 +771,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
     expert_height = config["SETUP"]["EXPERT"]["HEIGHT"]
     expert_ratio = config["SETUP"]["EXPERT"]["RATIO"]
 
+    # read in highscore data
     raw_highscore_data: [[str, str, str]] = []
-
-    # read in data
     with open('highscores.csv', 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=' ')
         for row in reader:
@@ -712,69 +809,73 @@ def splash(stdscr: curses.window, config: dict) -> None:
 
     stdscr.clear()
     logo(stdscr)
-    # DISPLAY THE OPTIONS
-    # option 1 (beginner difficulty)
-    stdscr.addstr(f'[')
-    stdscr.addstr('1', curses.color_pair(1))  # cute coloring
-    # show the highest score if available
-    if len(total_list[0]) > 0:
-        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) '
-                      f'| {beginner_ratio:.2%} '
-                      f'| HS: {total_list[0][0][1]} {total_list[0][0][2]}\n')
-    else:
-        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) '
-                      f'| {beginner_ratio:.2%}\n')
 
-    # option 2 (intermediate difficulty)
-    stdscr.addstr(f'[')
-    stdscr.addstr('2', curses.color_pair(2))  # cute coloring
-    # show the highest score if available
-    if len(total_list[1]) > 0:
-        stdscr.addstr(
-            f'] Intermediate ({intermediate_width}x{intermediate_height}) '
-            f'| {intermediate_ratio:.2%} '
-            f'| HS: {total_list[1][0][1]} {total_list[1][0][2]}\n')
-    else:
-        stdscr.addstr(
-            f'] Intermediate ({intermediate_width}x{intermediate_height}) '
-            f'| {intermediate_ratio:.2%}\n')
+    def show_option(d: Difficulty) -> None:
+        term_height, term_width = stdscr.getmaxyx()
+        longest_d = max(Difficulty, key=lambda x: len(x.name))
+        spaces = len(longest_d.name)
+        if len(total_list[d.value]) > 0:
+            name = total_list[d.value][0][1]
+            score = total_list[d.value][0][2]
+        else:
+            name = None
+            score = None
+        options: [(str, bool, bool, bool)] = []
+        try:
+            w = config['SETUP'][d.name]['WIDTH']
+            h = config['SETUP'][d.name]['HEIGHT']
+            r = config['SETUP'][d.name]['RATIO']
+        except Exception:
+            w = -1
+            h = -1
+            r = -1
 
-    # option 3 (expert difficulty)
-    stdscr.addstr(f'[')
-    stdscr.addstr('3', curses.color_pair(3))  # cute coloring
-    # show the highest score if available
-    if len(total_list[2]) > 0:
-        stdscr.addstr(
-            f'] Expert       ({expert_width}x{expert_height}) '
-            f'| {expert_ratio:.2%} '
-            f'| HS: {total_list[2][0][1]} {total_list[2][0][2]}\n')
-    else:
-        stdscr.addstr(
-            f'] Expert       ({expert_width}x{expert_height}) '
-            f'| {expert_ratio:.2%}\n')
+        options.append((f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
+                        f'| HS: {name} {score}\n', True, True, True))
+        options.append((f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
+                        f'| HS: {score}\n', True, True, True))
+        options.append((f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
+                        f'| HS: {name}\n', True, True, True))
+        options.append(
+            (f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%}\n', False, True, True))
+        options.append(
+            (f'] {d.name:<{spaces}} ({w}x{h})\n', False, True, False))
+        options.append((f'] {d.name:<{spaces}} | HS: {name} {score}\n', True,
+                        False, False))
+        options.append(
+            (f'] {d.name:<{spaces}} | HS: {score}\n', True, False, False))
+        options.append(
+            (f'] {d.name:<{spaces}} | HS: {name}\n', True, False, False))
+        options.append((f'] {d.name}\n', False, False, False))
+        options.append((f'] {d.name[0]}\n', False, False, False))
 
-    # option 4 (custom difficulty)
-    stdscr.addstr(f'[')
-    stdscr.addstr('4', curses.color_pair(4))  # cute coloring
-    # show the highest score if available
-    if len(total_list[3]) > 0:
-        stdscr.addstr(
-            f'] Custom                        '
-            f'| HS: {total_list[3][0][1]} {total_list[3][0][2]}\n')
-    else:
-        stdscr.addstr(f'] Custom\n')
+        options.sort(key=len, reverse=True)
+
+        for (op, has_hs, has_wh, has_r) in options:
+            if has_r and r == -1:
+                continue
+            if has_wh and w == -1 or has_hs and h == -1:
+                continue
+            if term_width >= len(op) + 2:
+                if has_hs and len(total_list[d.value]) > 0:
+                    stdscr.addstr(op)
+                    return
+                elif not has_hs:
+                    stdscr.addstr(op)
+                    return
+                else:
+                    continue
+
+    # DISPLAY OPTIONS
+    for diff in Difficulty:
+        stdscr.addstr(f'[')
+        stdscr.addstr(f'{diff.value + 1}', curses.color_pair(diff.value + 1))
+        show_option(diff)
     stdscr.addstr('\n')
 
     # DISPLAY all symbols (useful if changing themes:)
-    display = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
-               [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
-               [Cell.FIVE, Cell.SIX, Cell.SEVEN, Cell.EIGHT]]
-    for row in display:
-        for cell in row:
-            stdscr.addstr('[')
-            cell.display(stdscr, config["LOOK"]["SYMBOLS"])
-            stdscr.addstr(']')
-        stdscr.addstr('\n')
+    display_sample(stdscr, config)
+
     stdscr.refresh()
 
     # Handle user interaction (selecting difficulty)
@@ -786,6 +887,21 @@ def splash(stdscr: curses.window, config: dict) -> None:
             key = curses.ERR
         if key == config["CONTROLS"]["KEYBOARD"]["EXIT"]:
             raise SystemExit(0)
+        if key == 'KEY_RESIZE':
+            stdscr.clear()
+            logo(stdscr)
+
+            # DISPLAY OPTIONS
+            for diff in Difficulty:
+                stdscr.addstr(f'[')
+                stdscr.addstr(f'{diff.value + 1}',
+                              curses.color_pair(diff.value + 1))
+                show_option(diff)
+            stdscr.addstr('\n')
+
+            # DISPLAY all symbols (useful if changing themes:)
+            display_sample(stdscr, config)
+            stdscr.refresh()
         if key == '1':
             board = Board(int(beginner_width), int(beginner_height),
                           float(beginner_ratio), Difficulty.BEGINNER,
