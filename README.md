@@ -49,7 +49,7 @@ Highscores can only be distinguished for the preset difficulties. Custom games a
 Note: If you modify these values the highscores will persist for the old settings. You may want to clear out the highscore file.
 
 ## Highscore Customization
-By default, saved names will be shortened to 6 characters. And only the top 10 in each category will be saved. If there are less then 10 highscores in a category then any score will count as a highscore.
+By default, saved names will be shortened to 6 characters. And only the top 10 in each category will be saved. If there are less than 10 highscores in a category then any score will count as a highscore.
 
 The name length and highscore list length can be modified in the `config.yaml` under the section labeled `HIGHSCORES`.
 
