@@ -13,7 +13,9 @@ import yaml
 
 
 # TODO:
-# show high scores when you get a new high score.
+# clean up my mess of code
+#  - fit within 80 col
+#  - reduce nesting and code duplication
 # better win lose screen
 # do something about when the screen isnt big enough? it can cause a crash.
 # show total time played(?)
@@ -67,7 +69,7 @@ class Board:
     neighbors = [x for x in itertools.product(range(-1, 2), range(-1, 2)) if x != (0, 0)]
     zero_time = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
-    def __init__(self, width: int, height: int, mine_ratio: float, difficulty: Difficulty, config: dict, stdscr: curses.window, no_flash: bool = False) -> None:
+    def __init__(self, width: int, height: int, mine_ratio: float, difficulty: Difficulty, config: dict, stdscr: curses.window) -> None:
         self.start_time = None
         self.end_time = None
         self.cum_time = datetime.timedelta(0)
@@ -79,7 +81,7 @@ class Board:
         self.locations = list(itertools.product(range(self.height), range(self.width)))
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
-        self.no_flash = no_flash
+        self.no_flash = config['SETUP']['NO_FLASH']
         self.difficulty = difficulty
         self.hs_config = config['HIGHSCORES']
         self.symbols = config["LOOK"]["SYMBOLS"]
@@ -431,7 +433,7 @@ def setup(stdscr: curses.window) -> None:
     parser.add_argument('-W', '--width', default=default_width, type=int)
     parser.add_argument('-H', '--height', default=default_height, type=int)
     parser.add_argument('-r', '--ratio', default=default_ratio, type=float)
-    parser.add_argument('--no-flash', action='store_true', default=False)
+    parser.add_argument('--no-flash', action='store_true', default=config['SETUP']['NO_FLASH'])
     args = parser.parse_args()
 
     # https://stackoverflow.com/questions/58594956/find-out-which-arguments-were-passed-explicitly-in-argparse
@@ -451,6 +453,7 @@ def setup(stdscr: curses.window) -> None:
         raise Exception(f'Invalid height: {args.height}. Must be <= {max_width}')
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
         raise Exception(f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
+    config["SETUP"]["NO_FLASH"] = args.no_flash
 
     init_colors(config["LOOK"]['COLORS'])
     curses.mousemask(curses.ALL_MOUSE_EVENTS)
@@ -463,10 +466,10 @@ def setup(stdscr: curses.window) -> None:
     if explicit.width or explicit.height or explicit.ratio:
         if not explicit.ratio:
             args.ratio = math.sqrt(args.width * args.height) / (args.width * args.height)
-        board = Board(args.width, args.height, args.ratio, Difficulty.CUSTOM, config, stdscr, args.no_flash)
+        board = Board(args.width, args.height, args.ratio, Difficulty.CUSTOM, config, stdscr)
         main_loop(stdscr, board, config)
     else:
-        splash(stdscr, config, args.no_flash)
+        splash(stdscr, config)
 
 
 # https://stackoverflow.com/a/21785167
@@ -514,7 +517,7 @@ def show_help(stdscr: curses.window, config: dict) -> None:
         stdscr.addstr(f'{command + ":":<{1+len(max(keyboard.keys(), key=len))}} {control_str(keyboard[command], mouse[command])}\n')
 
 
-def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
+def splash(stdscr: curses.window, config: dict) -> None:
     beginner_width = config["SETUP"]["BEGINNER"]["WIDTH"]
     beginner_height = config["SETUP"]["BEGINNER"]["HEIGHT"]
     beginner_ratio = config["SETUP"]["BEGINNER"]["RATIO"]
@@ -596,13 +599,13 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
             curses.endwin()
             exit()
         if key == '1':
-            board = Board(int(beginner_width), int(beginner_height), float(beginner_ratio), Difficulty.BEGINNER, config, stdscr, no_flash)
+            board = Board(int(beginner_width), int(beginner_height), float(beginner_ratio), Difficulty.BEGINNER, config, stdscr)
             break
         elif key == '2':
-            board = Board(int(intermediate_width), int(intermediate_height), float(intermediate_ratio), Difficulty.INTERMEDIATE, config, stdscr, no_flash)
+            board = Board(int(intermediate_width), int(intermediate_height), float(intermediate_ratio), Difficulty.INTERMEDIATE, config, stdscr)
             break
         elif key == '3':
-            board = Board(int(expert_width), int(expert_height), float(expert_ratio), Difficulty.EXPERT, config, stdscr, no_flash)
+            board = Board(int(expert_width), int(expert_height), float(expert_ratio), Difficulty.EXPERT, config, stdscr)
             break
         elif key == '4':
             min_width = config["SETUP"]['MIN_WIDTH']
@@ -646,7 +649,7 @@ def splash(stdscr: curses.window, config: dict, no_flash: bool) -> None:
                         custom_ratio = 'NaN'
                 if custom_ratio == '':
                     custom_ratio = str(config["SETUP"]["BEGINNER"]["RATIO"])
-            board = Board(int(custom_width), int(custom_height), float(custom_ratio), Difficulty.CUSTOM, config, stdscr, no_flash)
+            board = Board(int(custom_width), int(custom_height), float(custom_ratio), Difficulty.CUSTOM, config, stdscr)
             break
 
     curses.noecho()
