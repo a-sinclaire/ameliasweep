@@ -790,7 +790,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
             curses.curs_set(1)
             stdscr.nodelay(False)
             curses.endwin()
-            exit()
+            raise SystemExit(0)
         if key == '1':
             board = Board(int(beginner_width), int(beginner_height),
                           float(beginner_ratio), Difficulty.BEGINNER,
@@ -965,7 +965,7 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     curses.curs_set(1)
     stdscr.nodelay(False)
     curses.endwin()
-    exit()
+    raise SystemExit(0)
 
 
 if __name__ == '__main__':
