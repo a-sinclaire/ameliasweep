@@ -22,6 +22,7 @@ import load_config
 # revert back to normal terminal colors on exit
 # better win lose screen
 # show total time played(?)
+# let user define own game modes other than the 3 basics
 # update readme with any new changes
 
 
@@ -534,6 +535,17 @@ class Board:
 
 
 def init_colors(colors: {str: dict}) -> None:
+    str_to_id = {'ONE': 1,
+                 'TWO': 2,
+                 'THREE': 3,
+                 'FOUR': 4,
+                 'FIVE': 5,
+                 'SIX': 6,
+                 'SEVEN': 7,
+                 'EIGHT': 8,
+                 'SELECTOR': 9,
+                 'LOSE': 10,
+                 'WIN': 11}
     defaults: {str, int} = colors['DEFAULT']
     rgbs: {str: [int]} = colors['RGB']
 
@@ -546,21 +558,21 @@ def init_colors(colors: {str: dict}) -> None:
 
         if curses.can_change_color():
             # use rgb values
-            for idx, c in enumerate(rgbs.values()):
-                default_color = list(defaults.values())[idx]
-                if c is None:
-                    curses.init_pair(idx + 1, default_color, -1)
+            for idx, (c_n, c_v) in enumerate(rgbs.items()):
+                default_color = defaults.get(c_n)
+                if c_v is None:
+                    curses.init_pair(str_to_id[c_n], default_color, -1)
                     continue
                 # noinspection PyArgumentList
-                curses.init_color(default_color, *c)
+                curses.init_color(default_color, *c_v)
                 # we use default_color here for a janky reason
                 # sometimes a terminal thinks it can change color but it cant
                 # this makes sure it falls back onto default colors
-                curses.init_pair(idx + 1, default_color, -1)
+                curses.init_pair(str_to_id[c_n], default_color, -1)
         else:
-            for idx, c in enumerate(defaults.values()):
-                default_color = list(defaults.values())[idx]
-                curses.init_pair(idx + 1, default_color, -1)
+            for idx, (c_n, c_v) in enumerate(defaults.items()):
+                default_color = c_v
+                curses.init_pair(str_to_id[c_n], default_color, -1)
 
 
 class _Sentinel:
