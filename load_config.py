@@ -1,16 +1,19 @@
 import math
+import os.path
+import shutil
 
 import yaml
 
 from main import Difficulty
 
-
 # TODO: maybe handle loading of highscores in here too?
+config_path = 'config.yaml'
+
 
 def load_config() -> dict:
     # TODO: figure out canonical location for config file
     try:
-        with open('config.yaml', 'r') as f:
+        with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
     except FileNotFoundError:
         config = generate_new_config()
@@ -22,7 +25,13 @@ def load_config() -> dict:
 
 
 def generate_new_config() -> dict:
-    raise NotImplementedError
+    if os.path.isfile('config_template.yaml'):
+        shutil.copy('config_template.yaml', config_path)
+    else:
+        raise NotImplementedError
+
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
 
 
 def fill_uninitialized_values(config: dict) -> dict:
