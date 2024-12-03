@@ -43,6 +43,10 @@ If any of your controls are not working it could be due to your terminal. You ca
 
 *Hint: you can use `Home`, `End`, `PageUp`, and `PageDown` to traverse faster*
 
+# Customization:
+Many features of the game can be customized by editing values in the `config.yaml`, which is located *[Right now it is just in the same folder as the executable, but this will likely change in the future]*. If a config file does not exist one will be generated for you when you run the game.
+
+
 ## Game Customization:
 Highscores can only be distinguished for the preset difficulties. Custom games all have the label `CUSTOM`. You can modify what your own presets look like by modifying the values in the `config.yaml` file under `SETUP`. This allows you to define the board height, width, and ratio of mines. The ratio should be a value between 0 and 1.
 
