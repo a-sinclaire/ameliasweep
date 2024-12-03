@@ -710,19 +710,19 @@ def splash(stdscr: curses.window, config: dict) -> None:
                            if x[0] == difficulty.name])
 
     stdscr.clear()
-    logo(stdscr)\
-    # DISPLAY OPTIONS
+    logo(stdscr)
+        # DISPLAY OPTIONS
     # option 1 (beginner difficulty)
     stdscr.addstr(f'[')
     stdscr.addstr('1', curses.color_pair(1))  # cute coloring
     # show the highest score if available
     if len(total_list[0]) > 0:
-        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) \
-                        | {beginner_ratio:.2%} \
-                        | HS: {total_list[0][0][1]} {total_list[0][0][2]}\n')
+        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) '
+                      f'| {beginner_ratio:.2%} '
+                      f'| HS: {total_list[0][0][1]} {total_list[0][0][2]}\n')
     else:
-        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) \
-                        | {beginner_ratio:.2%}\n')
+        stdscr.addstr(f'] Beginner     ({beginner_width}x{beginner_height}) '
+                      f'| {beginner_ratio:.2%}\n')
 
     # option 2 (intermediate difficulty)
     stdscr.addstr(f'[')
@@ -730,13 +730,13 @@ def splash(stdscr: curses.window, config: dict) -> None:
     # show the highest score if available
     if len(total_list[1]) > 0:
         stdscr.addstr(
-            f'] Intermediate ({intermediate_width}x{intermediate_height}) \
-              | {intermediate_ratio:.2%} \
-              | HS: {total_list[1][0][1]} {total_list[1][0][2]}\n')
+            f'] Intermediate ({intermediate_width}x{intermediate_height}) '
+            f'| {intermediate_ratio:.2%} '
+            f'| HS: {total_list[1][0][1]} {total_list[1][0][2]}\n')
     else:
         stdscr.addstr(
-            f'] Intermediate ({intermediate_width}x{intermediate_height}) \
-              | {intermediate_ratio:.2%}\n')
+            f'] Intermediate ({intermediate_width}x{intermediate_height}) '
+            f'| {intermediate_ratio:.2%}\n')
 
     # option 3 (expert difficulty)
     stdscr.addstr(f'[')
@@ -744,13 +744,13 @@ def splash(stdscr: curses.window, config: dict) -> None:
     # show the highest score if available
     if len(total_list[2]) > 0:
         stdscr.addstr(
-            f'] Expert       ({expert_width}x{expert_height}) \
-              | {expert_ratio:.2%} \
-              | HS: {total_list[2][0][1]} {total_list[2][0][2]}\n')
+            f'] Expert       ({expert_width}x{expert_height}) '
+            f'| {expert_ratio:.2%} '
+            f'| HS: {total_list[2][0][1]} {total_list[2][0][2]}\n')
     else:
         stdscr.addstr(
-            f'] Expert       ({expert_width}x{expert_height}) \
-              | {expert_ratio:.2%}\n')
+            f'] Expert       ({expert_width}x{expert_height}) '
+            f'| {expert_ratio:.2%}\n')
 
     # option 4 (custom difficulty)
     stdscr.addstr(f'[')
@@ -758,8 +758,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
     # show the highest score if available
     if len(total_list[3]) > 0:
         stdscr.addstr(
-            f'] Custom                        \
-            | HS: {total_list[3][0][1]} {total_list[3][0][2]}\n')
+            f'] Custom                        '
+            f'| HS: {total_list[3][0][1]} {total_list[3][0][2]}\n')
     else:
         stdscr.addstr(f'] Custom\n')
     stdscr.addstr('\n')
@@ -817,8 +817,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
                 stdscr.clear()
                 logo(stdscr)
                 custom_width = raw_input(stdscr, 7, 0,
-                                         f"width (min: {min_width}, \
-                                                  max: {max_width}): ").lower()
+                                         f"width (min: {min_width}, "
+                                         f"max: {max_width}): ").lower()
                 if custom_width.isdigit():
                     if min_width and int(custom_width) < min_width:
                         custom_width = 'NaN'
@@ -833,8 +833,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
                 logo(stdscr)
                 stdscr.addstr(f'width: {custom_width}')
                 custom_height = raw_input(stdscr, 8, 0,
-                                          "height(min: {min_width}, \
-                                                  max: {max_width}): ").lower()
+                                          f"height (min: {min_height}, "
+                                          f"max: {max_height}): ").lower()
                 if custom_height.isdigit():
                     if min_height and int(custom_height) < min_height:
                         custom_height = 'NaN'
