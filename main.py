@@ -14,6 +14,7 @@ import yaml
 
 
 # TODO:
+# put config in canonical location
 # revert back to normal terminal colors on exit
 # better win lose screen
 # do something about when the screen isn't big enough? it can cause a crash.
@@ -957,4 +958,8 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
 
 
 if __name__ == '__main__':
-    curses.wrapper(setup)
+    try:
+        curses.wrapper(setup)
+    except Exception as e:
+        raise Exception(f'Terminal too small. Increase size'
+                        f'of terminal or reduce font size.') from e
