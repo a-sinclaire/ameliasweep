@@ -204,6 +204,8 @@ class Board:
             self.cursor = loc
 
     def move_direction(self, direction: str) -> None:
+        if not self.state == GameState.PLAYING:
+            return
         if direction == 'LEFT':
             self.move_cursor(-1, 0)
         elif direction == 'RIGHT':
@@ -251,7 +253,7 @@ class Board:
                                         if x[0] == self.difficulty.name]
 
         # check if current score is better than any score in highscore list
-        max_scores = self.hs_config[self.difficulty.name + '_MAX']
+        max_scores = self.hs_config.get(self.difficulty.name + '_MAX')
         if (any(self.score < s for s in scores)  # higher than any value
                 or scores is None  # or list is empty
                 or len(scores) < max_scores):  # or list is not full
@@ -269,7 +271,11 @@ class Board:
             # remove invalid characters (white spaces and quotes)
             name = name.translate(str.maketrans('', '', ' \n\t\r\'"'))
             # force uppercase and enforce name char limit
-            name = name.upper()[:self.hs_config['MAX_NAME_LENGTH']]
+            max_name_length = self.hs_config.get('MAX_NAME_LENGTH')
+            if max_name_length != math.inf:
+                name = name.upper()[:max_name_length]
+            else:
+                name = name.upper()
 
             # add in the new score
             highscore_data.append([self.difficulty, name, self.score])
@@ -297,6 +303,8 @@ class Board:
                     if not cat:
                         continue
                     max_scores = self.hs_config[cat[0][0] + '_MAX']
+                    if max_scores == math.inf:
+                        max_scores = len(cat)
                     for hs in cat[:max_scores]:
                         writer.writerow(hs)
                     # add a gap between each difficulty level
@@ -389,11 +397,13 @@ class Board:
                 raw_highscore_data.append(row)
 
         # get only scores for the selected Difficulty level
-        scores_str: [datetime.timedelta] = [x for x in raw_highscore_data
-                                            if x[0] == self.difficulty.name]
+        scores_str: [[str, str, datetime.timedelta]] = \
+            [x for x in raw_highscore_data if x[0] == self.difficulty.name]
 
         difficulty_n = self.difficulty.name
         max_scores = self.hs_config[f'{difficulty_n}_MAX']
+        if max_scores == math.inf:
+            max_scores = len(scores_str)
         title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
         # clear the screen
         self.stdscr.clear()
@@ -402,6 +412,7 @@ class Board:
         self.stdscr.addstr(f'{difficulty_n} HIGH SCORES\n', title_format)
 
         # list scores
+        max_name_length = len(max(scores_str, key=lambda x: len(x[1]))[1])
         for idx, score in enumerate(scores_str[:max_scores]):
             self.stdscr.addstr(f'[')
             # do cute color matching for numbers
@@ -414,9 +425,12 @@ class Board:
             # if we are showing the highscores after someone got a new one
             # then we will do our best to highlight their new score
             if f'{Board.zero_time + self.score:%H:%M:%S.%f}' == score[2]:
-                self.stdscr.addstr(f'{score[1]} | {score[2]}\n', title_format)
+                self.stdscr.addstr(
+                    f'{score[1]:<{max_name_length}} | {score[2]}\n',
+                    title_format)
             else:
-                self.stdscr.addstr(f'{score[1]} | {score[2]}\n')
+                self.stdscr.addstr(f'{score[1]:<{max_name_length}} |'
+                                   f' {score[2]}\n')
         self.stdscr.nodelay(False)
         self.stdscr.refresh()
         self.stdscr.getch()
@@ -517,7 +531,6 @@ class Board:
             self.stdscr.addstr('You Win!\n')
 
 
-# TODO: what happens if the default colors are NULL in the config?
 def init_colors(colors: {str: dict}) -> None:
     defaults: {str, int} = colors['DEFAULT']
     rgbs: {str: [int]} = colors['RGB']
@@ -532,15 +545,20 @@ def init_colors(colors: {str: dict}) -> None:
         if curses.can_change_color():
             # use rgb values
             for idx, c in enumerate(rgbs.values()):
+                default_color = list(defaults.values())[idx]
+                if c is None:
+                    curses.init_pair(idx + 1, default_color, -1)
+                    continue
                 # noinspection PyArgumentList
-                curses.init_color(list(defaults.values())[idx], *c)
-                # we use defaults.values()[idx] here for a janky reason
+                curses.init_color(default_color, *c)
+                # we use default_color here for a janky reason
                 # sometimes a terminal thinks it can change color but it cant
                 # this makes sure it falls back onto default colors
-                curses.init_pair(idx + 1, list(defaults.values())[idx], -1)
+                curses.init_pair(idx + 1, default_color, -1)
         else:
             for idx, c in enumerate(defaults.values()):
-                curses.init_pair(idx + 1, c, -1)
+                default_color = list(defaults.values())[idx]
+                curses.init_pair(idx + 1, default_color, -1)
 
 
 class _Sentinel:
@@ -549,8 +567,137 @@ class _Sentinel:
 
 def setup(stdscr: curses.window) -> None:
     # loading config
-    with open('config.yaml', 'r') as f:
-        config = yaml.safe_load(f)
+    try:
+        with open('config.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        config = {}
+
+    if config is None:
+        config = {}
+
+    # adding hardcoded values for controls if none are specified
+    hard_coded_keyboard = {'LEFT': 'KEY_LEFT',
+                           'RIGHT': 'KEY_RIGHT',
+                           'UP': 'KEY_UP',
+                           'DOWN': 'KEY_DOWN',
+                           'REVEAL': ' ',
+                           'FLAG': 'f',
+                           'RESET': 'r',
+                           'HOME': 'KEY_HOME',
+                           'END': 'KEY_END',
+                           'CEILING': 'KEY_PPAGE',
+                           'FLOOR': 'KEY_NPAGE',
+                           'HELP': 'h',
+                           'HIGHSCORES': 'p',
+                           'EXIT': 'q'}
+    if not config.get('CONTROLS'):
+        config['CONTROLS'] = {}
+    if not config['CONTROLS'].get('KEYBOARD'):
+        config['CONTROLS']['KEYBOARD'] = {}
+    if not config['CONTROLS'].get('MOUSE'):
+        config['CONTROLS']['MOUSE'] = {}
+    for k_n, k_v in hard_coded_keyboard.items():
+        if config['CONTROLS']['KEYBOARD'].get(k_n) is None:
+            config['CONTROLS']['KEYBOARD'][k_n] = None
+    always_set = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'REVEAL', 'FLAG', 'RESET',
+                  'HELP', 'EXIT']
+    for k in always_set:
+        if config['CONTROLS']['KEYBOARD'].get(k) is None \
+                and config['CONTROLS']['MOUSE'].get(k) is None:
+            config['CONTROLS']['KEYBOARD'][k] = hard_coded_keyboard[k]
+
+    # adding hardcoded values for setup if none are specified
+    hard_code_setup = {'NO_FLASH': False,
+                       'MIN_WIDTH': 2,
+                       'MIN_HEIGHT': 2,
+                       'MAX_WIDTH': None,
+                       'MAX_HEIGHT': None,
+                       'BEGINNER': {'WIDTH': '09',
+                                    'HEIGHT': '09',
+                                    'RATIO': 0.123},
+                       'INTERMEDIATE': {'WIDTH': 16,
+                                        'HEIGHT': 16,
+                                        'RATIO': 0.156},
+                       'EXPERT': {'WIDTH': 30,
+                                  'HEIGHT': 16,
+                                  'RATIO': 0.206},
+                       }
+    if not config.get('SETUP'):
+        config['SETUP'] = {}
+    if config['SETUP'].get('NO_FLASH') is None:
+        config['SETUP']['NO_FLASH'] = hard_code_setup['NO_FLASH']
+    if config['SETUP'].get('MIN_WIDTH') is None:
+        config['SETUP']['MIN_WIDTH'] = hard_code_setup['MIN_WIDTH']
+    if config['SETUP'] and config['SETUP'].get('MIN_HEIGHT') is None:
+        config['SETUP']['MIN_HEIGHT'] = hard_code_setup['MIN_HEIGHT']
+    if config['SETUP'] and config['SETUP'].get('MAX_WIDTH') is None:
+        config['SETUP']['MAX_WIDTH'] = hard_code_setup['MAX_WIDTH']
+    if config['SETUP'] and config['SETUP'].get('MAX_HEIGHT') is None:
+        config['SETUP']['MAX_HEIGHT'] = hard_code_setup['MAX_HEIGHT']
+    for d in Difficulty:
+        for b_n, b_v in hard_code_setup.get(d.name, {}).items():
+            if not config['SETUP'].get(d.name):
+                config['SETUP'][d.name] = {}
+            if config['SETUP'][d.name].get(b_n) is None:
+                config['SETUP'][d.name][b_n] = b_v
+
+    # adding hardcoded values for highscores if none are specified
+    hard_code_highscore = {'MAX_NAME_LENGTH': math.inf,
+                           'BEGINNER_MAX': math.inf,
+                           'INTERMEDIATE_MAX': math.inf,
+                           'CUSTOM_MAX': math.inf}
+    if not config.get('HIGHSCORES'):
+        config['HIGHSCORES'] = {}
+    for hs_n, hs_v in hard_code_highscore.items():
+        if config['HIGHSCORES'].get(hs_n) is None:
+            config['HIGHSCORES'][hs_n] = hs_v
+
+    # adding hardcoded values for symbols if none are specified
+    hard_coded_symbols = {'BLANK': ' ',
+                          'ONE': '1',
+                          'TWO': '2',
+                          'THREE': '3',
+                          'FOUR': '4',
+                          'FIVE': '5',
+                          'SIX': '6',
+                          'SEVEN': '7',
+                          'EIGHT': '8',
+                          'MINE': '¤',
+                          'FLAG': '¶',
+                          'UNOPENED': '■'}
+    if not config.get('LOOK'):
+        config['LOOK'] = {}
+    if not config['LOOK'].get('SYMBOLS'):
+        config['LOOK']['SYMBOLS'] = {}
+    for b_n, b_v in hard_coded_symbols.items():
+        if config['LOOK']['SYMBOLS'].get(b_n) is None:
+            config['LOOK']['SYMBOLS'][b_n] = b_v
+
+    # adding hardcoded values for colors if none are specified
+    hard_coded_colors = {'ONE': 4,
+                         'TWO': 2,
+                         'THREE': 1,
+                         'FOUR': 3,
+                         'FIVE': 5,
+                         'SIX': 6,
+                         'SEVEN': 0,
+                         'EIGHT': 7,
+                         'SELECTOR': 3,
+                         'LOSE': 1,
+                         'WIN': 2}
+    if not config['LOOK'].get('COLORS'):
+        config['LOOK']['COLORS'] = {}
+    if not config['LOOK']['COLORS'].get('DEFAULT'):
+        config['LOOK']['COLORS']['DEFAULT'] = {}
+    if not config['LOOK']['COLORS'].get('RGB'):
+        config['LOOK']['COLORS']['RGB'] = {}
+    for c_n, c_v in hard_coded_colors.items():
+        if config['LOOK']['COLORS']['DEFAULT'].get(c_n) is None:
+            config['LOOK']['COLORS']['DEFAULT'][c_n] = c_v
+    for c_n, c_v in hard_coded_colors.items():
+        if config['LOOK']['COLORS']['RGB'].get(c_n) is None:
+            config['LOOK']['COLORS']['RGB'][c_n] = None
 
     # defaults and arg parse
     min_width = config['SETUP']['MIN_WIDTH']
@@ -627,7 +774,6 @@ def raw_input(stdscr: curses.window, r: int, c: int, prompt: str) -> str:
     return inp.decode()  # ^^^^  reading input at next line
 
 
-# TODO: decide on a logo
 def logo(stdscr: curses.window) -> None:
     term_height, term_width = stdscr.getmaxyx()
     options: [str] = [
@@ -722,7 +868,7 @@ def show_help(stdscr: curses.window, config: dict) -> None:
     for command in keyboard.keys():
         stdscr.addstr(
             f'{command + ":":<{1 + len(longest_cmd)}} '
-            f'{control_str(keyboard[command], mouse[command])}\n')
+            f'{control_str(keyboard.get(command), mouse.get(command))}\n')
 
 
 def display_sample(stdscr: curses.window, config: dict) -> None:
@@ -885,7 +1031,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
             key = stdscr.getkey(0, 0)
         except Exception:
             key = curses.ERR
-        if key == config["CONTROLS"]["KEYBOARD"]["EXIT"]:
+        if key == config["CONTROLS"]["KEYBOARD"].get("EXIT"):
             raise SystemExit(0)
         if key == 'KEY_RESIZE':
             stdscr.clear()
@@ -918,6 +1064,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
                           config, stdscr)
             break
         elif key == '4':
+            # TODO: these need to be moved down according to the height of the
+            # logo... maybe can get current cursor position or something?
             min_width = config["SETUP"]['MIN_WIDTH']
             min_height = config["SETUP"]['MIN_HEIGHT']
             max_width = config["SETUP"]['MAX_WIDTH']
@@ -978,7 +1126,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     keyboard = config["CONTROLS"]["KEYBOARD"]
     mouse = config["CONTROLS"]["MOUSE"]
-    help_str = control_str(keyboard["HELP"], mouse["HELP"])
+    help_str = control_str(keyboard.get("HELP"), mouse.get("HELP"))
     # show board
     stdscr.clear()
     board.display()
@@ -990,27 +1138,27 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             key = stdscr.getkey(0, 0)
         except Exception:
             key = curses.ERR
-        if key == keyboard["EXIT"]:
+        if key == keyboard.get("EXIT"):
             break
-        elif key == keyboard["HELP"]:
+        elif key == keyboard.get("HELP"):
             board.pause()
             show_help(stdscr, config)
-        elif key == keyboard["HIGHSCORES"]:
+        elif key == keyboard.get("HIGHSCORES"):
             board.show_highscores()
-        elif key == keyboard["REVEAL"]:
+        elif key == keyboard.get("REVEAL"):
             board.reveal()
-        elif key == keyboard["FLAG"]:
+        elif key == keyboard.get("FLAG"):
             board.flag()
-        elif key == keyboard["RESET"]:
+        elif key == keyboard.get("RESET"):
             board.reset()
-        elif (key == keyboard["LEFT"] or
-              key == keyboard["RIGHT"] or
-              key == keyboard["UP"] or
-              key == keyboard["DOWN"] or
-              key == keyboard["HOME"] or
-              key == keyboard["END"] or
-              key == keyboard["FLOOR"] or
-              key == keyboard["CEILING"]):
+        elif (key == keyboard.get("LEFT") or
+              key == keyboard.get("RIGHT") or
+              key == keyboard.get("UP") or
+              key == keyboard.get("DOWN") or
+              key == keyboard.get("HOME") or
+              key == keyboard.get("END") or
+              key == keyboard.get("FLOOR") or
+              key == keyboard.get("CEILING")):
             move_str = list(keyboard.keys())[
                 list(keyboard.values()).index(key)]
             board.move_direction(move_str)
@@ -1021,39 +1169,40 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 _, mx, my, _, bstate = curses.getmouse()
             except Exception:
                 pass
-            if (mouse["EXIT"]
-                    and (bstate & getattr(curses, mouse["EXIT"]))):
+            if (mouse.get("EXIT")
+                    and (bstate & getattr(curses, mouse.get("EXIT")))):
                 break
-            elif (mouse["HELP"]
-                  and (bstate & getattr(curses, mouse["HELP"]))):
+            elif (mouse.get("HELP")
+                  and (bstate & getattr(curses, mouse.get("HELP")))):
                 board.pause()
                 show_help(stdscr, config)
-            elif (mouse["HIGHSCORES"]
-                  and (bstate & getattr(curses, mouse["HIGHSCORES"]))):
+            elif (mouse.get("HIGHSCORES")
+                  and (bstate & getattr(curses, mouse.get("HIGHSCORES")))):
                 board.show_highscores()
-            elif (mouse["REVEAL"]
-                  and (bstate & getattr(curses, mouse["REVEAL"]))):
+            elif (mouse.get("REVEAL")
+                  and (bstate & getattr(curses, mouse.get("REVEAL")))):
                 board.set_cursor_from_mouse(mx, my)
                 board.reveal()
-            elif (mouse["FLAG"]
-                  and (bstate & getattr(curses, mouse["FLAG"]))):
+            elif (mouse.get("FLAG")
+                  and (bstate & getattr(curses, mouse.get("FLAG")))):
                 board.set_cursor_from_mouse(mx, my)
                 board.flag()
-            elif ((mouse["LEFT"] and (bstate & getattr(curses, mouse["LEFT"])))
-                  or (mouse["RIGHT"]
-                      and (bstate & getattr(curses, mouse["RIGHT"])))
-                  or (mouse["UP"]
-                      and (bstate & getattr(curses, mouse["UP"])))
-                  or (mouse["DOWN"]
-                      and (bstate & getattr(curses, mouse["DOWN"])))
-                  or (mouse["HOME"]
-                      and (bstate & getattr(curses, mouse["HOME"])))
-                  or (mouse["END"]
-                      and (bstate & getattr(curses, mouse["END"])))
-                  or (mouse["FLOOR"]
-                      and (bstate & getattr(curses, mouse["FLOOR"])))
-                  or (mouse["CEILING"]
-                      and (bstate & getattr(curses, mouse["CEILING"])))):
+            elif ((mouse.get("LEFT")
+                   and (bstate & getattr(curses, mouse.get("LEFT"))))
+                  or (mouse.get("RIGHT")
+                      and (bstate & getattr(curses, mouse.get("RIGHT"))))
+                  or (mouse.get("UP")
+                      and (bstate & getattr(curses, mouse.get("UP"))))
+                  or (mouse.get("DOWN")
+                      and (bstate & getattr(curses, mouse.get("DOWN"))))
+                  or (mouse.get("HOME")
+                      and (bstate & getattr(curses, mouse.get("HOME"))))
+                  or (mouse.get("END")
+                      and (bstate & getattr(curses, mouse.get("END"))))
+                  or (mouse.get("FLOOR")
+                      and (bstate & getattr(curses, mouse.get("FLOOR"))))
+                  or (mouse.get("CEILING")
+                      and (bstate & getattr(curses, mouse.get("CEILING"))))):
                 move_str = list(keyboard.keys())[
                     list(keyboard.values()).index(key)]
                 board.move_direction(move_str)
