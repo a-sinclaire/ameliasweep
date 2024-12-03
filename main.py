@@ -784,12 +784,6 @@ def splash(stdscr: curses.window, config: dict) -> None:
         except Exception as e:
             key = curses.ERR
         if key == config["CONTROLS"]["KEYBOARD"]["EXIT"]:
-            curses.nocbreak()
-            stdscr.keypad(False)
-            curses.echo()
-            curses.curs_set(1)
-            stdscr.nodelay(False)
-            curses.endwin()
             raise SystemExit(0)
         if key == '1':
             board = Board(int(beginner_width), int(beginner_height),
@@ -959,12 +953,6 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             stdscr.addstr(f'Press {help_str} for help.')
         stdscr.refresh()
 
-    curses.nocbreak()
-    stdscr.keypad(False)
-    curses.echo()
-    curses.curs_set(1)
-    stdscr.nodelay(False)
-    curses.endwin()
     raise SystemExit(0)
 
 
