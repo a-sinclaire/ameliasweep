@@ -657,8 +657,8 @@ def show_help(stdscr: curses.window, config: dict) -> None:
     longest_cmd = max(keyboard.keys(), key=len)
     for command in keyboard.keys():
         stdscr.addstr(
-            f'{command + ":":<{1 + len(longest_cmd)}} \
-              {control_str(keyboard[command], mouse[command])}\n')
+            f'{command + ":":<{1 + len(longest_cmd)}} '
+            f'{control_str(keyboard[command], mouse[command])}\n')
 
 
 def splash(stdscr: curses.window, config: dict) -> None:
