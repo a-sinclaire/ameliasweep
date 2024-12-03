@@ -10,7 +10,6 @@ import operator
 import random
 import time
 from typing import Any
-import yaml
 
 import load_config
 
@@ -611,17 +610,17 @@ def setup(stdscr: curses.window) -> None:
 
     # verifies the values passed in via cli are appropriate
     if min_width and args.width < min_width:
-        raise Exception(f'Invalid width: {args.width}. Must be >= {min_width}')
+        raise ValueError(f'Invalid width: {args.width}. Must be >= {min_width}')
     if min_height and args.height < min_height:
-        raise Exception(
+        raise ValueError(
             f'Invalid height: {args.height}. Must be >= {min_height}')
     if max_width and args.width > max_width:
-        raise Exception(f'Invalid width: {args.width}. Must be <= {max_width}')
+        raise ValueError(f'Invalid width: {args.width}. Must be <= {max_width}')
     if max_height and args.height > max_height:
-        raise Exception(
+        raise ValueError(
             f'Invalid height: {args.height}. Must be <= {max_width}')
     if args.ratio is not None and (args.ratio < 0 or args.ratio > 1):
-        raise Exception(
+        raise ValueError(
             f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
     config["SETUP"]["NO_FLASH"] = args.no_flash
 
@@ -630,7 +629,7 @@ def setup(stdscr: curses.window) -> None:
     stdscr.nodelay(True)
     try:
         curses.curs_set(0)
-    except Exception:
+    except curses.error:
         pass
 
     # if the width or height or ratio is set from CLI this is a CUSTOM game,
@@ -855,7 +854,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
             w = config['SETUP'][d.name]['WIDTH']
             h = config['SETUP'][d.name]['HEIGHT']
             r = config['SETUP'][d.name]['RATIO']
-        except Exception:
+        except KeyError:
             w = -1
             h = -1
             r = -1
@@ -879,7 +878,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
         options.append((f'] {d.name}\n', False, False, False))
         options.append((f'] {d.name[0]}\n', False, False, False))
 
-        options.sort(key=len, reverse=True)
+        # options.sort(key=lambda x: len(x[0]), reverse=True)
 
         for (op, has_hs, has_wh, has_r) in options:
             if has_r and r == -1:
@@ -913,7 +912,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
     while True:
         try:
             key = stdscr.getkey(0, 0)
-        except Exception:
+        except curses.error:
             key = curses.ERR
         if key == config["CONTROLS"]["KEYBOARD"].get("EXIT"):
             raise SystemExit(0)
@@ -1020,7 +1019,7 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     while True:
         try:
             key = stdscr.getkey(0, 0)
-        except Exception:
+        except curses.error:
             key = curses.ERR
         if key == keyboard.get("EXIT"):
             break
@@ -1051,7 +1050,7 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             mx, my = (-1, -1)
             try:
                 _, mx, my, _, bstate = curses.getmouse()
-            except Exception:
+            except curses.error:
                 pass
             if (mouse.get("EXIT")
                     and (bstate & getattr(curses, mouse.get("EXIT")))):
@@ -1109,6 +1108,6 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
 if __name__ == '__main__':
     try:
         curses.wrapper(setup)
-    except Exception as e:
+    except curses.error as e:
         raise Exception(f'Terminal too small. Increase size'
                         f'of terminal or reduce font size.') from e
