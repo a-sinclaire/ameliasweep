@@ -388,7 +388,6 @@ class Board:
                                             if x[0] == self.difficulty.name]
 
         difficulty_n = self.difficulty.name
-        difficulty_v = self.difficulty.value
         max_scores = self.hs_config[f'{difficulty_n}_MAX']
         title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
         # clear the screen
@@ -528,6 +527,7 @@ def init_colors(colors: {str: dict}) -> None:
         if curses.can_change_color():
             # use rgb values
             for idx, c in enumerate(rgbs.values()):
+                # noinspection PyArgumentList
                 curses.init_color(list(defaults.values())[idx], *c)
                 # we use defaults.values()[idx] here for a janky reason
                 # sometimes a terminal thinks it can change color but it cant
@@ -594,7 +594,7 @@ def setup(stdscr: curses.window) -> None:
     stdscr.nodelay(True)
     try:
         curses.curs_set(0)
-    except:
+    except Exception:
         pass
 
     # if the width or height or ratio is set from CLI this is a CUSTOM game,
@@ -711,7 +711,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
 
     stdscr.clear()
     logo(stdscr)
-        # DISPLAY OPTIONS
+    # DISPLAY THE OPTIONS
     # option 1 (beginner difficulty)
     stdscr.addstr(f'[')
     stdscr.addstr('1', curses.color_pair(1))  # cute coloring
@@ -781,7 +781,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
     while True:
         try:
             key = stdscr.getkey(0, 0)
-        except Exception as e:
+        except Exception:
             key = curses.ERR
         if key == config["CONTROLS"]["KEYBOARD"]["EXIT"]:
             raise SystemExit(0)
@@ -871,7 +871,7 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     while True:
         try:
             key = stdscr.getkey(0, 0)
-        except Exception as e:
+        except Exception:
             key = curses.ERR
         if key == keyboard["EXIT"]:
             break
@@ -902,7 +902,7 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             mx, my = (-1, -1)
             try:
                 _, mx, my, _, bstate = curses.getmouse()
-            except:
+            except Exception:
                 pass
             if (mouse["EXIT"]
                     and (bstate & getattr(curses, mouse["EXIT"]))):
