@@ -15,14 +15,23 @@ import load_config
 
 
 # TODO:
-# resize entire game (if possible) based on terminal size
+# allow editing of bg color
+# add exit button to main menu
+# add main menu keybind
 # show reset key on game end
+# better win lose text
+
 # put config in canonical location
+# type check config values
+# check curses keycodes are valid
+# allow hex codes OR rgb lists
+# consolidate keyboard/mouse config (allow multiple options)
+# in game settings / config editor
+
+# resize entire game (if possible) based on terminal size
 # revert back to normal terminal colors on exit
-# better win lose screen
-# show total time played(?)
-# let user define own game modes other than the 3 basics
-# update readme with any new changes
+
+# let user define own game modes other than the 3 basics?
 
 
 class Difficulty(Enum):
@@ -109,8 +118,6 @@ class Board:
 
         self.stdscr = stdscr
 
-        self.n_wins = 0
-        self.n_games = 0
         self.start_time = None
         self.end_time = None
         self.cum_time = datetime.timedelta(0)
@@ -316,8 +323,6 @@ class Board:
     def won(self) -> None:
         self.state = GameState.WON
         self.end_time = datetime.datetime.now()
-        self.n_wins += 1
-        self.n_games += 1
 
         self.score = self.cum_time + (self.end_time - self.start_time)
         for m in self.mines:
@@ -342,7 +347,6 @@ class Board:
     def lose(self) -> None:
         self.state = GameState.LOST
         self.end_time = datetime.datetime.now()
-        self.n_games += 1
 
         self.reveal_all()
         self.death = self.cursor
@@ -474,12 +478,6 @@ class Board:
             win_format = (curses.A_REVERSE
                           | curses.color_pair(11)
                           | curses.A_BOLD)
-
-        # show wins/losses at top
-        half_middle = (self.width * 3) // 2
-        n_lose = self.n_games - self.n_wins
-        self.stdscr.addstr(f'{"WINS: " + str(self.n_wins):^{half_middle}}')
-        self.stdscr.addstr(f'{"LOSSES: " + str(n_lose):^{half_middle}}\n')
 
         # show timer next
         if self.start_time is not None and self.state == GameState.PLAYING:
