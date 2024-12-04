@@ -15,7 +15,7 @@ import load_config
 
 
 # TODO:
-# allow editing of bg color
+# allow editing all symbol colors (flag and mine and unopened)
 # add exit button to main menu
 # add main menu keybind
 # show reset key on game end
@@ -531,7 +531,7 @@ class Board:
             self.stdscr.addstr('You Win!\n')
 
 
-def init_colors(colors: {str: dict}) -> None:
+def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
     str_to_id = {'ONE': 1,
                  'TWO': 2,
                  'THREE': 3,
@@ -542,7 +542,9 @@ def init_colors(colors: {str: dict}) -> None:
                  'EIGHT': 8,
                  'SELECTOR': 9,
                  'LOSE': 10,
-                 'WIN': 11}
+                 'WIN': 11,
+                 'BG': 12,
+                 'FG': 13}
     defaults: {str, int} = colors['DEFAULT']
     rgbs: {str: [int]} = colors['RGB']
 
@@ -555,21 +557,50 @@ def init_colors(colors: {str: dict}) -> None:
 
         if curses.can_change_color():
             # use rgb values
-            for idx, (c_n, c_v) in enumerate(rgbs.items()):
-                default_color = defaults.get(c_n)
-                if c_v is None:
-                    curses.init_pair(str_to_id[c_n], default_color, -1)
-                    continue
+            # get BG color
+            if (bg_color := rgbs.get('BG')) and (fg_color := rgbs.get('FG')):
                 # noinspection PyArgumentList
-                curses.init_color(default_color, *c_v)
-                # we use default_color here for a janky reason
-                # sometimes a terminal thinks it can change color but it cant
-                # this makes sure it falls back onto default colors
-                curses.init_pair(str_to_id[c_n], default_color, -1)
+                curses.init_color(str_to_id['BG'], *bg_color)
+                bg = str_to_id['BG']
+                # noinspection PyArgumentList
+                curses.init_color(str_to_id['FG'], *fg_color)
+                fg = str_to_id['FG']
+            elif bg_color := rgbs.get('BG'):
+                # noinspection PyArgumentList
+                curses.init_color(str_to_id['BG'], *bg_color)
+                bg = str_to_id['BG']
+                fg = defaults['FG']
+            elif fg_color := rgbs.get('FG'):
+                bg = defaults['BG']
+                # noinspection PyArgumentList
+                curses.init_color(str_to_id['FG'], *fg_color)
+                fg = str_to_id['FG']
+            else:
+                bg = defaults['BG']
+                fg = defaults['FG']
+            curses.init_pair(str_to_id['BG'], fg, bg)
+            stdscr.bkgd(' ', curses.color_pair(str_to_id['BG']))
+
+            for idx, (c_n, c_v) in enumerate(rgbs.items()):
+                if c_n == 'BG' or c_n == 'FG':
+                    continue
+                my_color = defaults.get(c_n)
+                if c_v is None:
+                    curses.init_pair(str_to_id[c_n], my_color, bg)
+                    continue
+
+                # noinspection PyArgumentList
+                curses.init_color(str_to_id[c_n], *c_v)
+                curses.init_pair(str_to_id[c_n], str_to_id[c_n], bg)
         else:
+            bg = defaults['BG']
+            curses.init_pair(str_to_id['BG'], defaults['FG'],
+                             defaults['BG'])
+            stdscr.bkgd(' ', curses.color_pair(str_to_id['BG']))
             for idx, (c_n, c_v) in enumerate(defaults.items()):
-                default_color = c_v
-                curses.init_pair(str_to_id[c_n], default_color, -1)
+                if c_n == 'BG' or c_n == 'FG':
+                    continue
+                curses.init_pair(str_to_id[c_n], c_v, bg)
 
 
 class _Sentinel:
@@ -622,7 +653,7 @@ def setup(stdscr: curses.window) -> None:
             f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
     config["SETUP"]["NO_FLASH"] = args.no_flash
 
-    init_colors(config["LOOK"]['COLORS'])
+    init_colors(stdscr, config["LOOK"]['COLORS'])
     curses.mousemask(curses.ALL_MOUSE_EVENTS)
     stdscr.nodelay(True)
     try:

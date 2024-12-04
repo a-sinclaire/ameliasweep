@@ -108,6 +108,8 @@ You will see a subsection labeled `RGB` which allows you to change these values.
 
 If your terminal does not support rgb colors then it will fall back on the default colors, which can be seen in the subsection labeled `DEFAULT`. These are color codes.
 
+**Some terminals _think_ they suport rgb colors, but do not. You may notice the colors don't seem correct. If this is the case it is recommended you delete the `RGB` section from the config file.**
+
 The following are the 8 basic colors:\
 `0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white`
 
