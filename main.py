@@ -16,7 +16,6 @@ import load_config
 
 # TODO:
 # allow editing all symbol colors (flag and mine and unopened)
-# show reset key on game end
 
 # put config in canonical location
 # type check config values
@@ -110,6 +109,7 @@ class Board:
         self.mines = []
 
         self.difficulty = difficulty
+        self.config = config
         self.no_flash = config['SETUP']['NO_FLASH']
         self.hs_config = config['HIGHSCORES']
         self.symbols = config["LOOK"]["SYMBOLS"]
@@ -524,11 +524,14 @@ class Board:
             self.stdscr.addstr('\n')
         self.stdscr.addstr('\n')
 
-        # TODO: improve look of win/lose screens
+        reset_key = control_str(self.config["CONTROLS"]["KEYBOARD"]["RESET"],
+                                self.config["CONTROLS"]["MOUSE"]["RESET"])
         if self.state == GameState.LOST:
             self.stdscr.addstr(f'{"YOU LOSE!":^{self.middle}}\n', title_format)
+            self.stdscr.addstr(f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
         elif self.state == GameState.WON:
             self.stdscr.addstr(f'{"YOU WIN!":^{self.middle}}\n', title_format)
+            self.stdscr.addstr(f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
 
 
 def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
