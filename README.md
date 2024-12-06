@@ -1,4 +1,4 @@
-# AmeliaSweep
+# MeeleyMine
 *A terminal based minesweeper application*
 
 ## How to run:
