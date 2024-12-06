@@ -16,7 +16,6 @@ import load_config
 
 # TODO:
 # allow editing all symbol colors (flag and mine and unopened)
-# add exit button to main menu
 # add main menu keybind
 # show reset key on game end
 # better win lose text
@@ -930,6 +929,10 @@ def splash(stdscr: curses.window, config: dict) -> None:
         stdscr.addstr(f'{diff.value + 1}', curses.color_pair(diff.value + 1))
         show_option(diff)
     stdscr.addstr('\n')
+    stdscr.addstr(f'[')
+    stdscr.addstr(f'5', curses.color_pair(len(
+        Difficulty) + 1))
+    stdscr.addstr(f'] Exit\n\n')
 
     # DISPLAY all symbols (useful if changing themes:)
     display_sample(stdscr, config)
@@ -1030,6 +1033,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
                           float(custom_ratio), Difficulty.CUSTOM,
                           config, stdscr)
             break
+        elif key == '5':
+            raise SystemExit(0)
 
     curses.noecho()
     main_loop(stdscr, board, config)
