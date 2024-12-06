@@ -17,6 +17,7 @@ import load_config
 # TODO:
 # allow editing all symbol colors (flag and mine and unopened)
 
+# make wrap around an option
 # put config in canonical location
 # type check config values
 # check curses keycodes are valid
@@ -191,15 +192,17 @@ class Board:
 
         self.start_time = datetime.datetime.now()
 
-    def set_cursor_from_mouse(self, screen_x: int, screen_y: int) -> None:
+    def set_cursor_from_mouse(self, screen_x: int, screen_y: int) -> bool:
         if not self.state == GameState.PLAYING:
-            return
+            return False
         # x and y are screen coordinates
-        new_row = screen_y - 2  # two for timer and win/loss counts
+        new_row = screen_y - 1  # two for timer
         new_col = (screen_x // 3)  # to account for [ ] style
         loc = (new_row, new_col)
         if self.in_bounds(loc) and self.state == GameState.PLAYING:
             self.cursor = loc
+            return True
+        return False
 
     def move_cursor(self, x: int, y: int) -> None:
         if not self.state == GameState.PLAYING:
@@ -1109,12 +1112,12 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 break
             elif (mouse.get("REVEAL")
                   and (bstate & getattr(curses, mouse.get("REVEAL")))):
-                board.set_cursor_from_mouse(mx, my)
-                board.reveal()
+                if board.set_cursor_from_mouse(mx, my):
+                    board.reveal()
             elif (mouse.get("FLAG")
                   and (bstate & getattr(curses, mouse.get("FLAG")))):
-                board.set_cursor_from_mouse(mx, my)
-                board.flag()
+                if board.set_cursor_from_mouse(mx, my):
+                    board.flag()
             elif ((mouse.get("LEFT")
                    and (bstate & getattr(curses, mouse.get("LEFT"))))
                   or (mouse.get("RIGHT")
