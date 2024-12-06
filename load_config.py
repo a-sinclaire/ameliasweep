@@ -164,7 +164,7 @@ def fill_uninitialized_values(config: dict) -> dict:
         config['SETUP']['MAX_WIDTH'] = hard_coded_setup['MAX_WIDTH']
     if config['SETUP'] and config['SETUP'].get('MAX_HEIGHT') is None:
         config['SETUP']['MAX_HEIGHT'] = hard_coded_setup['MAX_HEIGHT']
-    from main import Difficulty
+    from meeleymine import Difficulty
     for d in Difficulty:
         for b_n, b_v in hard_coded_setup.get(d.name, {}).items():
             if not config['SETUP'].get(d.name):
