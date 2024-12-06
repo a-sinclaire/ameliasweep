@@ -17,7 +17,6 @@ import load_config
 # TODO:
 # allow editing all symbol colors (flag and mine and unopened)
 # show reset key on game end
-# better win lose text
 
 # put config in canonical location
 # type check config values
@@ -104,6 +103,7 @@ class Board:
         self.height = height
         self.locations = list(itertools.product(range(self.height),
                                                 range(self.width)))
+        self.middle = self.width * 3
 
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
@@ -269,7 +269,7 @@ class Board:
 
             # Get player's name
             self.display()
-            self.stdscr.addstr(f'NEW HIGHSCORE!!',
+            self.stdscr.addstr(f'{"NEW HIGHSCORE!!!":^{self.middle}}',
                                curses.A_BOLD
                                | curses.A_REVERSE
                                | curses.A_BLINK)
@@ -413,7 +413,9 @@ class Board:
         self.stdscr.clear()
 
         # title
-        self.stdscr.addstr(f'{difficulty_n} HIGH SCORES\n', title_format)
+        # TODO: center this text based on the width of the highscore screen
+        self.stdscr.addstr(f'{f"{difficulty_n} HIGH SCORES":^{self.middle}}\n',
+                           title_format)
 
         # list scores
         max_name_length = len(max(scores_str, key=lambda x: len(x[1]))[1])
@@ -487,9 +489,9 @@ class Board:
         else:
             _time = Board.zero_time + self.cum_time
 
-        middle = self.width * 3
+        title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
         time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-        self.stdscr.addstr(f'{time_str:^{middle}}\n')
+        self.stdscr.addstr(f'{time_str:^{self.middle}}\n')
 
         # display board
         for rid, row in enumerate(self.my_board):
@@ -524,9 +526,9 @@ class Board:
 
         # TODO: improve look of win/lose screens
         if self.state == GameState.LOST:
-            self.stdscr.addstr('You Lose!\n')
+            self.stdscr.addstr(f'{"YOU LOSE!":^{self.middle}}\n', title_format)
         elif self.state == GameState.WON:
-            self.stdscr.addstr('You Win!\n')
+            self.stdscr.addstr(f'{"YOU WIN!":^{self.middle}}\n', title_format)
 
 
 def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
@@ -1132,14 +1134,14 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
         elif key == curses.ERR:
             if board.state != GameState.PAUSED:
                 board.display()
-                stdscr.addstr(f'Press {help_str} for help.')
+                stdscr.addstr(f'{f"Press {help_str} for help.":^{board.middle}}')
                 stdscr.noutrefresh()
                 stdscr.refresh()
             continue
         if board.state != GameState.PAUSED:
             stdscr.clear()
             board.display()
-            stdscr.addstr(f'Press {help_str} for help.')
+            stdscr.addstr(f'{f"Press {help_str} for help.":^{board.middle}}')
         stdscr.refresh()
 
     raise SystemExit(0)
