@@ -16,7 +16,6 @@ import load_config
 
 # TODO:
 # allow editing all symbol colors (flag and mine and unopened)
-# add main menu keybind
 # show reset key on game end
 # better win lose text
 
@@ -1062,6 +1061,9 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             show_help(stdscr, config)
         elif key == keyboard.get("HIGHSCORES"):
             board.show_highscores()
+        elif key == keyboard.get("MENU"):
+            splash(stdscr, config)
+            break
         elif key == keyboard.get("REVEAL"):
             board.reveal()
         elif key == keyboard.get("FLAG"):
@@ -1096,6 +1098,10 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             elif (mouse.get("HIGHSCORES")
                   and (bstate & getattr(curses, mouse.get("HIGHSCORES")))):
                 board.show_highscores()
+            elif (mouse.get("MENU")
+                    and (bstate & getattr(curses, mouse.get("MENU")))):
+                splash(stdscr, config)
+                break
             elif (mouse.get("REVEAL")
                   and (bstate & getattr(curses, mouse.get("REVEAL")))):
                 board.set_cursor_from_mouse(mx, my)

@@ -51,6 +51,7 @@ def default_config() -> dict:
                                       'FLOOR': 'KEY_NPAGE',
                                       'HELP': 'h',
                                       'HIGHSCORES': 'p',
+                                      'MENU': 'm',
                                       'EXIT': 'q'
                                       },
                          'MOUSE': {'LEFT': None,
@@ -66,6 +67,7 @@ def default_config() -> dict:
                                    'FLOOR': None,
                                    'HELP': None,
                                    'HIGHSCORES': None,
+                                   'MENU': None,
                                    'EXIT': None}},
             'SETUP': {'NO_FLASH': False,
                       'MIN_WIDTH': 2,
@@ -171,7 +173,11 @@ def fill_uninitialized_values(config: dict) -> dict:
                 config['SETUP'][d.name][b_n] = b_v
 
     # adding hardcoded values for highscores if none are specified
-    hard_coded_highscore = hard_coded['HIGHSCORES']
+    # hard_coded_highscore = hard_coded['HIGHSCORES']
+    hard_coded_highscore = {'MAX_NAME_LENGTH': math.inf,
+                            'BEGINNER_MAX': math.inf,
+                            'INTERMEDIATE_MAX': math.inf,
+                            'CUSTOM_MAX': math.inf}
     if not config.get('HIGHSCORES'):
         config['HIGHSCORES'] = {}
     for hs_n, hs_v in hard_coded_highscore.items():
