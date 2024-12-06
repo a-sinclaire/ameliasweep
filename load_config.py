@@ -70,6 +70,7 @@ def default_config() -> dict:
                                    'MENU': None,
                                    'EXIT': None}},
             'SETUP': {'NO_FLASH': False,
+                      'WRAP_AROUND': True,
                       'MIN_WIDTH': 2,
                       'MIN_HEIGHT': 2,
                       'MAX_WIDTH': None,
@@ -144,7 +145,7 @@ def fill_uninitialized_values(config: dict) -> dict:
             config['CONTROLS']['KEYBOARD'][k_n] = None
 
     always_set = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'REVEAL', 'FLAG', 'RESET',
-                  'HELP', 'EXIT']
+                  'HELP', 'MENU', 'EXIT']
     for k in always_set:
         if config['CONTROLS']['KEYBOARD'].get(k) is None \
                 and config['CONTROLS']['MOUSE'].get(k) is None:
@@ -156,6 +157,8 @@ def fill_uninitialized_values(config: dict) -> dict:
         config['SETUP'] = {}
     if config['SETUP'].get('NO_FLASH') is None:
         config['SETUP']['NO_FLASH'] = hard_coded_setup['NO_FLASH']
+    if config['SETUP'].get('WRAP_AROUND') is None:
+        config['SETUP']['WRAP_AROUND'] = hard_coded_setup['WRAP_AROUND']
     if config['SETUP'].get('MIN_WIDTH') is None:
         config['SETUP']['MIN_WIDTH'] = hard_coded_setup['MIN_WIDTH']
     if config['SETUP'] and config['SETUP'].get('MIN_HEIGHT') is None:

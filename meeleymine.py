@@ -15,9 +15,9 @@ import load_config
 
 
 # TODO:
+# change default colors
 # allow editing all symbol colors (flag and mine and unopened)
 
-# make wrap around an option
 # put config in canonical location
 # type check config values
 # check curses keycodes are valid
@@ -209,7 +209,10 @@ class Board:
             return
         new_row = self.cursor[0] + y
         new_col = self.cursor[1] + x
-        loc = (new_row % self.height, new_col % self.width)  # wrap around
+        if self.config['SETUP']['WRAP_AROUND']:
+            loc = (new_row % self.height, new_col % self.width)  # wrap around
+        else:
+            loc = (new_row, new_col)
         if self.in_bounds(loc):
             self.cursor = loc
 
