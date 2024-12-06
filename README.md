@@ -3,18 +3,18 @@
 
 ## How to run:
 To run:\
-`python main.py`
+`python meeleymine.py`
 
 You can also specify the width and height of the board using the `-W` and `-H` options:\
-`python main.py -W 15 -H 10`
+`python meeleymine.py -W 15 -H 10`
 
 You can also specify the ratio of mines in the board as a float between 0 and 1:\
-`python main.py -r 0.15`
+`python meeleymine.py -r 0.15`
 
 If no ratio is given the default number of mines will be equal to the square root of the board area.
 
 The game has some flash effects. If that is something you may be sensitive to please run with the `no-flash` option:\
-`python main.py --no-flash`
+`python meeleymine.py --no-flash`
 
 
 ## How to play:
