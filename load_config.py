@@ -19,6 +19,8 @@ def load_config() -> dict:
     if config is None:
         config = {}
 
+    config = initialize_structure(config)
+    config = type_check_values(config)
     return fill_uninitialized_values(config)
 
 
@@ -129,18 +131,47 @@ def default_config() -> dict:
                                         'WIN': [0, 1000, 0]}}}}
 
 
-def fill_uninitialized_values(config: dict) -> dict:
-    hard_coded = default_config()
-
-    # adding hardcoded values for controls if none are specified
-    hard_coded_keyboard = hard_coded['CONTROLS']['KEYBOARD']
-    hard_coded_mouse = hard_coded['CONTROLS']['KEYBOARD']
+def initialize_structure(config: dict) -> dict:
     if not config.get('CONTROLS'):
         config['CONTROLS'] = {}
     if not config['CONTROLS'].get('KEYBOARD'):
         config['CONTROLS']['KEYBOARD'] = {}
     if not config['CONTROLS'].get('MOUSE'):
         config['CONTROLS']['MOUSE'] = {}
+
+    if not config.get('SETUP'):
+        config['SETUP'] = {}
+    if config['SETUP'].get('BEGINNER') is None:
+        config['SETUP']['BEGINNER'] = {}
+    if config['SETUP'].get('INTERMEDIATE') is None:
+        config['SETUP']['INTERMEDIATE'] = {}
+    if config['SETUP'].get('EXPERT') is None:
+        config['SETUP']['EXPERT'] = {}
+
+    if not config.get('HIGHSCORES'):
+        config['HIGHSCORES'] = {}
+
+    if not config.get('LOOK'):
+        config['LOOK'] = {}
+    if not config['LOOK'].get('SYMBOLS'):
+        config['LOOK']['SYMBOLS'] = {}
+
+    if not config['LOOK'].get('COLORS'):
+        config['LOOK']['COLORS'] = {}
+    if not config['LOOK']['COLORS'].get('DEFAULT'):
+        config['LOOK']['COLORS']['DEFAULT'] = {}
+    if not config['LOOK']['COLORS'].get('RGB'):
+        config['LOOK']['COLORS']['RGB'] = {}
+
+    return config
+
+
+def fill_uninitialized_values(config: dict) -> dict:
+    hard_coded = default_config()
+
+    # adding hardcoded values for controls if none are specified
+    hard_coded_keyboard = hard_coded['CONTROLS']['KEYBOARD']
+    hard_coded_mouse = hard_coded['CONTROLS']['KEYBOARD']
     for k_n, k_v in hard_coded_keyboard.items():
         if config['CONTROLS']['KEYBOARD'].get(k_n) is None:
             config['CONTROLS']['KEYBOARD'][k_n] = None
@@ -157,8 +188,6 @@ def fill_uninitialized_values(config: dict) -> dict:
 
     # adding hardcoded values for setup if none are specified
     hard_coded_setup = hard_coded['SETUP']
-    if not config.get('SETUP'):
-        config['SETUP'] = {}
     if config['SETUP'].get('NO_FLASH') is None:
         config['SETUP']['NO_FLASH'] = hard_coded_setup['NO_FLASH']
     if config['SETUP'].get('WRAP_AROUND') is None:
@@ -185,36 +214,104 @@ def fill_uninitialized_values(config: dict) -> dict:
                             'BEGINNER_MAX': math.inf,
                             'INTERMEDIATE_MAX': math.inf,
                             'CUSTOM_MAX': math.inf}
-    if not config.get('HIGHSCORES'):
-        config['HIGHSCORES'] = {}
     for hs_n, hs_v in hard_coded_highscore.items():
         if config['HIGHSCORES'].get(hs_n) is None:
             config['HIGHSCORES'][hs_n] = hs_v
 
     # adding hardcoded values for symbols if none are specified
     hard_coded_symbols = hard_coded['LOOK']['SYMBOLS']
-    if not config.get('LOOK'):
-        config['LOOK'] = {}
-    if not config['LOOK'].get('SYMBOLS'):
-        config['LOOK']['SYMBOLS'] = {}
     for b_n, b_v in hard_coded_symbols.items():
         if config['LOOK']['SYMBOLS'].get(b_n) is None:
             config['LOOK']['SYMBOLS'][b_n] = b_v
 
     # adding hardcoded values for colors if none are specified
     hard_coded_colors = hard_coded['LOOK']['COLORS']['DEFAULT']
-    if not config['LOOK'].get('COLORS'):
-        config['LOOK']['COLORS'] = {}
-    if not config['LOOK']['COLORS'].get('DEFAULT'):
-        config['LOOK']['COLORS']['DEFAULT'] = {}
-    if not config['LOOK']['COLORS'].get('RGB'):
-        config['LOOK']['COLORS']['RGB'] = {}
     for c_n, c_v in hard_coded_colors.items():
         if config['LOOK']['COLORS']['DEFAULT'].get(c_n) is None:
             config['LOOK']['COLORS']['DEFAULT'][c_n] = c_v
     for c_n, c_v in hard_coded_colors.items():
         if config['LOOK']['COLORS']['RGB'].get(c_n) is None:
             config['LOOK']['COLORS']['RGB'][c_n] = None
+
+    return config
+
+
+def type_check_values(config: dict) -> dict:
+    for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
+        if not isinstance(k_v, str):
+            config['CONTROLS']['KEYBOARD'][k_n] = None
+
+    for k_n, k_v in config['CONTROLS']['MOUSE'].items():
+        if not isinstance(k_v, str):
+            config['CONTROLS']['MOUSE'][k_n] = None
+
+    if not isinstance(config['SETUP']['NO_FLASH'], bool):
+        config['SETUP']['NO_FLASH'] = None
+    if not isinstance(config['SETUP']['WRAP_AROUND'], bool):
+        config['SETUP']['WRAP_AROUND'] = None
+
+    try:
+        int(config['SETUP']['MIN_WIDTH'])
+    except (ValueError, TypeError):
+        config['SETUP']['MIN_WIDTH'] = None
+    try:
+        int(config['SETUP']['MIN_HEIGHT'])
+    except (ValueError, TypeError):
+        config['SETUP']['MIN_HEIGHT'] = None
+    try:
+        int(config['SETUP']['MAX_WIDTH'])
+    except (ValueError, TypeError):
+        config['SETUP']['MAX_WIDTH'] = None
+    try:
+        int(config['SETUP']['MAX_HEIGHT'])
+    except (ValueError, TypeError):
+        config['SETUP']['MAX_HEIGHT'] = None
+
+    from meeleymine import Difficulty
+    for d in Difficulty:
+        if d == Difficulty.CUSTOM:
+            continue
+        try:
+            int(config['SETUP'][d.name]['WIDTH'])
+        except (ValueError, TypeError):
+            config['SETUP'][d.name]['WIDTH'] = None
+        try:
+            int(config['SETUP'][d.name]['HEIGHT'])
+        except (ValueError, TypeError):
+            config['SETUP'][d.name]['HEIGHT'] = None
+        try:
+            float(config['SETUP'][d.name]['RATIO'])
+        except (ValueError, TypeError):
+            config['SETUP'][d.name]['RATIO'] = None
+
+    for k_n, k_v in config['HIGHSCORES'].items():
+        try:
+            int(k_v)
+        except (ValueError, TypeError):
+            config['HIGHSCORES'][k_n] = None
+
+    for k_n, k_v in config['LOOK']['SYMBOLS'].items():
+        if not isinstance(k_v, str):
+            config['LOOK']['SYMBOLS'][k_n] = None
+
+    for k_n, k_v in config['LOOK']['COLORS']['DEFAULT'].items():
+        try:
+            int(k_v)
+        except (ValueError, TypeError):
+            config['LOOK']['COLORS']['DEFAULT'] = None
+
+    for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
+        if not isinstance(k_v, list):
+            config['LOOK']['COLORS']['RGB'][k_n] = None
+        else:
+            try:
+                int(config['LOOK']['COLORS']['RGB'][k_n][0])
+                int(config['LOOK']['COLORS']['RGB'][k_n][1])
+                int(config['LOOK']['COLORS']['RGB'][k_n][2])
+            except (ValueError, TypeError):
+                config['LOOK']['COLORS']['RGB'][k_n] = None
+
+
 
     return config
 
