@@ -238,34 +238,38 @@ def fill_uninitialized_values(config: dict) -> dict:
 
 def type_check_values(config: dict) -> dict:
     for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
-        if not isinstance(k_v, str):
-            config['CONTROLS']['KEYBOARD'][k_n] = None
+        if not isinstance(k_v, str) and not k_v is None:
+            raise TypeError(f'Config for CONTROLS:KEYBOARD:{k_n} must be of type string.')
 
     for k_n, k_v in config['CONTROLS']['MOUSE'].items():
-        if not isinstance(k_v, str):
-            config['CONTROLS']['MOUSE'][k_n] = None
+        if not isinstance(k_v, str) and not k_v is None:
+            raise TypeError(f'Config for CONTROLS:MOUSE:{k_n} must be of type string.')
 
-    if not isinstance(config['SETUP']['NO_FLASH'], bool):
-        config['SETUP']['NO_FLASH'] = None
-    if not isinstance(config['SETUP']['WRAP_AROUND'], bool):
-        config['SETUP']['WRAP_AROUND'] = None
+    if not isinstance(config['SETUP']['NO_FLASH'], bool) and not config['SETUP']['NO_FLASH'] is None:
+        raise TypeError(f'Config for SETUP:NO_FLASH must be of type bool.')
+    if not isinstance(config['SETUP']['WRAP_AROUND'], bool) and not config['SETUP']['WRAP_AROUND'] is None:
+        raise TypeError(f'Config for SETUP:WRAP_AROUND must be of type bool.')
 
     try:
         int(config['SETUP']['MIN_WIDTH'])
     except (ValueError, TypeError):
-        config['SETUP']['MIN_WIDTH'] = None
+        if not config['SETUP']['MIN_WIDTH'] is None:
+            raise TypeError(f'Config for SETUP:MIN_WIDTH must be of type int.')
     try:
         int(config['SETUP']['MIN_HEIGHT'])
     except (ValueError, TypeError):
-        config['SETUP']['MIN_HEIGHT'] = None
+        if not config['SETUP']['MIN_HEIGHT'] is None:
+            raise TypeError(f'Config for SETUP:MIN_HEIGHT must be of type int.')
     try:
         int(config['SETUP']['MAX_WIDTH'])
     except (ValueError, TypeError):
-        config['SETUP']['MAX_WIDTH'] = None
+        if not config['SETUP']['MAX_WIDTH'] is None:
+            raise TypeError(f'Config for SETUP:MAX_WIDTH must be of type int.')
     try:
         int(config['SETUP']['MAX_HEIGHT'])
     except (ValueError, TypeError):
-        config['SETUP']['MAX_HEIGHT'] = None
+        if not config['SETUP']['MAX_HEIGHT'] is None:
+            raise TypeError(f'Config for SETUP:MAX_HEIGHT must be of type int.')
 
     from meeleymine import Difficulty
     for d in Difficulty:
@@ -274,44 +278,49 @@ def type_check_values(config: dict) -> dict:
         try:
             int(config['SETUP'][d.name]['WIDTH'])
         except (ValueError, TypeError):
-            config['SETUP'][d.name]['WIDTH'] = None
+            if not config['SETUP'][d.name]['WIDTH'] is None:
+                raise TypeError(
+                    f'Config for SETUP:{d.name}:WIDTH must be of type int.')
         try:
             int(config['SETUP'][d.name]['HEIGHT'])
         except (ValueError, TypeError):
-            config['SETUP'][d.name]['HEIGHT'] = None
+            if not config['SETUP'][d.name]['HEIGHT'] is None:
+                raise TypeError(
+                    f'Config for SETUP:{d.name}:HEIGHT must be of type int.')
         try:
             float(config['SETUP'][d.name]['RATIO'])
         except (ValueError, TypeError):
-            config['SETUP'][d.name]['RATIO'] = None
+            if not config['SETUP'][d.name]['RATIO'] is None:
+                raise TypeError(
+                    f'Config for SETUP:{d.name}:RATIO must be of type float.')
 
     for k_n, k_v in config['HIGHSCORES'].items():
         try:
             int(k_v)
         except (ValueError, TypeError):
-            config['HIGHSCORES'][k_n] = None
+            if not k_v is None:
+                raise TypeError(f'Config for HIGHSCORES:{k_n} must be of type int.')
 
     for k_n, k_v in config['LOOK']['SYMBOLS'].items():
-        if not isinstance(k_v, str):
-            config['LOOK']['SYMBOLS'][k_n] = None
+        if not isinstance(k_v, str) and not k_v is None:
+            raise TypeError(f'Config for LOOK:SYMBOLS:{k_n} must be of type str.')
 
     for k_n, k_v in config['LOOK']['COLORS']['DEFAULT'].items():
         try:
             int(k_v)
         except (ValueError, TypeError):
-            config['LOOK']['COLORS']['DEFAULT'] = None
+            if not k_v is None:
+                raise TypeError(f'Config for LOOK:COLORS:DEFAULT:{k_n} must be of type int.')
 
     for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
-        if not isinstance(k_v, list):
-            config['LOOK']['COLORS']['RGB'][k_n] = None
+        if not isinstance(k_v, list) and not k_v is None:
+            raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB:{k_n} must be of type list.')
         else:
             try:
-                int(config['LOOK']['COLORS']['RGB'][k_n][0])
-                int(config['LOOK']['COLORS']['RGB'][k_n][1])
-                int(config['LOOK']['COLORS']['RGB'][k_n][2])
+                for i in config['LOOK']['COLORS']['RGB'][k_n]:
+                    int(i)
             except (ValueError, TypeError):
-                config['LOOK']['COLORS']['RGB'][k_n] = None
-
-
+                raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB{k_n} must be a list of type int.')
 
     return config
 
