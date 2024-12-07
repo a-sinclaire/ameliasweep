@@ -210,7 +210,8 @@ def fill_uninitialized_values(config: dict) -> dict:
     for k in always_set:
         if config['CONTROLS']['KEYBOARD'].get(k) is None \
                 and config['CONTROLS']['MOUSE'].get(k) is None:
-            config['CONTROLS']['KEYBOARD'][k] = hard_coded['CONTROLS']['KEYBOARD'][k]
+            config['CONTROLS']['KEYBOARD'][k] = \
+                hard_coded['CONTROLS']['KEYBOARD'][k]
 
     # adding hardcoded values for setup if none are specified
     hard_coded_setup = hard_coded['SETUP']
@@ -261,39 +262,46 @@ def fill_uninitialized_values(config: dict) -> dict:
 
 
 def type_check_values(config: dict):
+    # CONTROLS
     for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
-        if not isinstance(k_v, str) and not k_v is None:
-            raise TypeError(f'Config for CONTROLS:KEYBOARD:{k_n} must be of type string.')
+        if not isinstance(k_v, str) and k_v is not None:
+            raise TypeError(f'Config for CONTROLS:KEYBOARD:{k_n}'
+                            f' must be of type string.')
 
     for k_n, k_v in config['CONTROLS']['MOUSE'].items():
-        if not isinstance(k_v, str) and not k_v is None:
-            raise TypeError(f'Config for CONTROLS:MOUSE:{k_n} must be of type string.')
+        if not isinstance(k_v, str) and k_v is not None:
+            raise TypeError(f'Config for CONTROLS:MOUSE:{k_n}'
+                            f' must be of type string.')
 
-    if not isinstance(config['SETUP']['NO_FLASH'], bool) and not config['SETUP']['NO_FLASH'] is None:
+    # SETUP
+    if (not isinstance(config['SETUP']['NO_FLASH'], bool)
+            and config['SETUP']['NO_FLASH'] is not None):
         raise TypeError(f'Config for SETUP:NO_FLASH must be of type bool.')
-    if not isinstance(config['SETUP']['WRAP_AROUND'], bool) and not config['SETUP']['WRAP_AROUND'] is None:
+    if (not isinstance(config['SETUP']['WRAP_AROUND'], bool)
+            and config['SETUP']['WRAP_AROUND'] is not None):
         raise TypeError(f'Config for SETUP:WRAP_AROUND must be of type bool.')
-
     try:
         int(config['SETUP']['MIN_WIDTH'])
     except (ValueError, TypeError):
-        if not config['SETUP']['MIN_WIDTH'] is None:
+        if config['SETUP']['MIN_WIDTH'] is not None:
             raise TypeError(f'Config for SETUP:MIN_WIDTH must be of type int.')
     try:
         int(config['SETUP']['MIN_HEIGHT'])
     except (ValueError, TypeError):
-        if not config['SETUP']['MIN_HEIGHT'] is None:
-            raise TypeError(f'Config for SETUP:MIN_HEIGHT must be of type int.')
+        if config['SETUP']['MIN_HEIGHT'] is not None:
+            raise TypeError(f'Config for SETUP:MIN_HEIGHT'
+                            f' must be of type int.')
     try:
         int(config['SETUP']['MAX_WIDTH'])
     except (ValueError, TypeError):
-        if not config['SETUP']['MAX_WIDTH'] is None:
+        if config['SETUP']['MAX_WIDTH'] is not None:
             raise TypeError(f'Config for SETUP:MAX_WIDTH must be of type int.')
     try:
         int(config['SETUP']['MAX_HEIGHT'])
     except (ValueError, TypeError):
-        if not config['SETUP']['MAX_HEIGHT'] is None:
-            raise TypeError(f'Config for SETUP:MAX_HEIGHT must be of type int.')
+        if config['SETUP']['MAX_HEIGHT'] is not None:
+            raise TypeError(f'Config for SETUP:MAX_HEIGHT'
+                            f' must be of type int.')
 
     from meeleymine import Difficulty
     for d in Difficulty:
@@ -302,19 +310,19 @@ def type_check_values(config: dict):
         try:
             int(config['SETUP'][d.name]['WIDTH'])
         except (ValueError, TypeError):
-            if not config['SETUP'][d.name]['WIDTH'] is None:
+            if config['SETUP'][d.name]['WIDTH'] is not None:
                 raise TypeError(
                     f'Config for SETUP:{d.name}:WIDTH must be of type int.')
         try:
             int(config['SETUP'][d.name]['HEIGHT'])
         except (ValueError, TypeError):
-            if not config['SETUP'][d.name]['HEIGHT'] is None:
+            if config['SETUP'][d.name]['HEIGHT'] is not None:
                 raise TypeError(
                     f'Config for SETUP:{d.name}:HEIGHT must be of type int.')
         try:
             float(config['SETUP'][d.name]['RATIO'])
         except (ValueError, TypeError):
-            if not config['SETUP'][d.name]['RATIO'] is None:
+            if config['SETUP'][d.name]['RATIO'] is not None:
                 raise TypeError(
                     f'Config for SETUP:{d.name}:RATIO must be of type float.')
 
@@ -324,11 +332,13 @@ def type_check_values(config: dict):
         try:
             int(k_v)
         except (ValueError, TypeError):
-            raise TypeError(f'Config for HIGHSCORES:{k_n} must be of type int.')
+            raise TypeError(
+                f'Config for HIGHSCORES:{k_n} must be of type int.')
 
     for k_n, k_v in config['LOOK']['SYMBOLS'].items():
-        if not isinstance(k_v, str) and not k_v is None:
-            raise TypeError(f'Config for LOOK:SYMBOLS:{k_n} must be of type str.')
+        if not isinstance(k_v, str) and k_v is not None:
+            raise TypeError(f'Config for LOOK:SYMBOLS:{k_n}'
+                            f' must be of type str.')
 
     for k_n, k_v in config['LOOK']['COLORS']['DEFAULT'].items():
         if k_v is None:
@@ -336,31 +346,36 @@ def type_check_values(config: dict):
         try:
             int(k_v)
         except (ValueError, TypeError):
-            raise TypeError(f'Config for LOOK:COLORS:DEFAULT:{k_n} must be of type int.')
+            raise TypeError(f'Config for LOOK:COLORS:DEFAULT:{k_n}'
+                            f' must be of type int.')
 
     for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
         if k_v is None:
             continue
         if not isinstance(k_v, list):
-            raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB:{k_n} must be of type list.')
+            raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB:{k_n}'
+                            f' must be of type list.')
         else:
             try:
                 for i in config['LOOK']['COLORS']['RGB'][k_n]:
                     int(i)
             except (ValueError, TypeError):
-                raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB{k_n} must be a list of type int.')
+                raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB{k_n}'
+                                f' must be a list of type int.')
 
 
 def value_check_values(config: dict):
     for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
         if k_v is None:
             continue
-        if k_v in r' `1234567890-=qwertyuiop[]\asdfghjkl;zxcvbnm,./~!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:"ZXCVBNM<>?'+"'":
+        if k_v in (r' `1234567890-=qwertyuiop[]\asdfghjkl;zxcvbnm,./~!@#$%^&*'
+                   r'()_+QWERTYUIOP{}|ASDFGHJKL:"ZXCVBNM<>?') + "'":
             continue
         try:
             getattr(curses, str(k_v))
         except AttributeError:
-            raise ValueError(f'{k_v} is not an acceptable for CONTROLS:KEYBOARD:{k_n}.')
+            raise ValueError(f'{k_v} is not an acceptable for'
+                             f' CONTROLS:KEYBOARD:{k_n}.')
 
     for k_n, k_v in config['CONTROLS']['MOUSE'].items():
         if k_v is None:
@@ -368,49 +383,70 @@ def value_check_values(config: dict):
         try:
             getattr(curses, str(k_v))
         except AttributeError:
-            raise ValueError(f'{k_v} is not an acceptable for CONTROLS:MOUSE:{k_n}.')
+            raise ValueError(f'{k_v} is not an acceptable for'
+                             f' CONTROLS:MOUSE:{k_n}.')
 
-    if not config['SETUP']['MIN_WIDTH'] is None and int(config['SETUP']['MIN_WIDTH']) < 2:
+    if (config['SETUP']['MIN_WIDTH'] is not None
+            and int(config['SETUP']['MIN_WIDTH']) < 2):
         raise ValueError(f'Config at SETUP:MIN_WIDTH cannot be less than 2.')
-    if not config['SETUP']['MIN_HEIGHT'] is None and int(config['SETUP']['MIN_HEIGHT']) < 2:
+    if (config['SETUP']['MIN_HEIGHT'] is not None
+            and int(config['SETUP']['MIN_HEIGHT']) < 2):
         raise ValueError(f'Config at SETUP:MIN_HEIGHT cannot be less than 2.')
-    if not config['SETUP']['MAX_WIDTH'] is None and int(config['SETUP']['MAX_WIDTH']) < 2:
+    if (config['SETUP']['MAX_WIDTH'] is not None
+            and int(config['SETUP']['MAX_WIDTH']) < 2):
         raise ValueError(f'Config at SETUP:MAX_WIDTH cannot be less than 2.')
-    if not config['SETUP']['MAX_HEIGHT'] is None and int(config['SETUP']['MAX_HEIGHT']) < 2:
+    if (config['SETUP']['MAX_HEIGHT'] is not None
+            and int(config['SETUP']['MAX_HEIGHT']) < 2):
         raise ValueError(f'Config at SETUP:MAX_HEIGHT cannot be less than 2.')
 
     from meeleymine import Difficulty
     for d in Difficulty:
         if d == Difficulty.CUSTOM:
             continue
-        if not config['SETUP'][d.name]['WIDTH'] is None and int(config['SETUP'][d.name]['WIDTH']) < 2:
-            raise ValueError(f'Config at SETUP:{d.name}:WIDTH cannot be less than 2.')
-        if not config['SETUP'][d.name]['HEIGHT'] is None and int(config['SETUP'][d.name]['HEIGHT']) < 2:
-            raise ValueError(f'Config at SETUP:{d.name}:HEIGHT cannot be less than 2.')
-        if not config['SETUP'][d.name]['RATIO'] is None and float(config['SETUP'][d.name]['RATIO']) < 0:
-            raise ValueError(f'Config at SETUP:{d.name}:RATIO cannot be less than 0.')
-        if not config['SETUP'][d.name]['RATIO'] is None and float(config['SETUP'][d.name]['RATIO']) > 1:
-            raise ValueError(f'Config at SETUP:{d.name}:RATIO cannot be greater than 1.')
+        if (config['SETUP'][d.name]['WIDTH'] is not None
+                and int(config['SETUP'][d.name]['WIDTH']) < 2):
+            raise ValueError(
+                f'Config at SETUP:{d.name}:WIDTH cannot be less than 2.')
+        if (config['SETUP'][d.name]['HEIGHT'] is not None
+                and int(config['SETUP'][d.name]['HEIGHT']) < 2):
+            raise ValueError(
+                f'Config at SETUP:{d.name}:HEIGHT cannot be less than 2.')
+        if (config['SETUP'][d.name]['RATIO'] is not None
+                and float(config['SETUP'][d.name]['RATIO']) < 0):
+            raise ValueError(
+                f'Config at SETUP:{d.name}:RATIO cannot be less than 0.')
+        if (config['SETUP'][d.name]['RATIO'] is not None and float(
+                config['SETUP'][d.name]['RATIO']) > 1):
+            raise ValueError(
+                f'Config at SETUP:{d.name}:RATIO cannot be greater than 1.')
 
-    if config['HIGHSCORES']['MAX_NAME_LENGTH'] is not None and int(config['HIGHSCORES']['MAX_NAME_LENGTH']) < 1:
-        raise ValueError(f'Config at HIGHSCORES:MAX_NAME_LENGTH cannot be less than 1.')
+    if config['HIGHSCORES']['MAX_NAME_LENGTH'] is not None and int(
+            config['HIGHSCORES']['MAX_NAME_LENGTH']) < 1:
+        raise ValueError(
+            f'Config at HIGHSCORES:MAX_NAME_LENGTH cannot be less than 1.')
     for k_n, k_v in config['HIGHSCORES'].items():
         if k_n == 'MAX_NAME_LENGTH' or k_v is None:
             continue
         if k_v < 0:
-            raise ValueError(f'Config at HIGHSCORES:{k_n} cannot be less than 0.')
+            raise ValueError(
+                f'Config at HIGHSCORES:{k_n} cannot be less than 0.')
 
     for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
         if k_v is None:
             continue
         if len(k_v) != 3:
-            raise ValueError(f'Config at LOOK:COLORS:RGB:{k_n} must be a list of length 3.')
+            raise ValueError(
+                f'Config at LOOK:COLORS:RGB:{k_n} must be a list of length 3.')
         else:
             for i in k_v:
                 if i < 0:
-                    raise ValueError(f'Config at LOOK:COLORS:RGB:{k_n}[{i}] must be greater than 0.')
+                    raise ValueError(
+                        f'Config at LOOK:COLORS:RGB:{k_n}[{i}]'
+                        f' must be greater than 0.')
                 if i > 1000:
-                    raise ValueError(f'Config at LOOK:COLORS:RGB:{k_n}[{i}] must be less than 1000.')
+                    raise ValueError(
+                        f'Config at LOOK:COLORS:RGB:{k_n}[{i}]'
+                        f' must be less than 1000.')
 
 
 if __name__ == '__main__':
