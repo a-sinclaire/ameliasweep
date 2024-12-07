@@ -113,7 +113,7 @@ def default_config() -> dict:
                                             'FOUR': 3,
                                             'FIVE': 5,
                                             'SIX': 6,
-                                            'SEVEN': 0,
+                                            'SEVEN': 8,
                                             'EIGHT': 7,
                                             'SELECTOR': 3,
                                             'LOSE': 1,
