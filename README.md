@@ -104,7 +104,7 @@ In the configuration file there is a section labeled `COLORS` under `LOOK` which
 If your terminal does not support color then these values do not matter.
 
 Some terminals support changing color values, which allows us to set custom RGB values.
-You will see a subsection labeled `RGB` which allows you to change these values. The values are in `[Red, Green, Blue]` notation, and each color ranges from 0-1000 **(not 255)**.
+You will see a subsection labeled `RGB` which allows you to change these values. The values are in `[Red, Green, Blue]` notation, and each color ranges from 0-1000 **(not 255)**. Alternatively, you can use hexcodes as strings, like so: `"#FF00FF"`.
 
 If your terminal does not support rgb colors then it will fall back on the default colors, which can be seen in the subsection labeled `DEFAULT`. These are color codes.
 

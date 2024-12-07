@@ -23,6 +23,7 @@ def load_config() -> dict:
     config = initialize_structure(config)
     type_check_values(config)
     value_check_values(config)
+    config = replace_hex(config)
     return fill_uninitialized_values(config)
 
 
@@ -326,6 +327,7 @@ def type_check_values(config: dict):
                 raise TypeError(
                     f'Config for SETUP:{d.name}:RATIO must be of type float.')
 
+    # HIGHSCORES
     for k_n, k_v in config['HIGHSCORES'].items():
         if k_v is None:
             continue
@@ -335,11 +337,13 @@ def type_check_values(config: dict):
             raise TypeError(
                 f'Config for HIGHSCORES:{k_n} must be of type int.')
 
+    # LOOK: SYMBOLS
     for k_n, k_v in config['LOOK']['SYMBOLS'].items():
         if not isinstance(k_v, str) and k_v is not None:
             raise TypeError(f'Config for LOOK:SYMBOLS:{k_n}'
                             f' must be of type str.')
 
+    # LOOK: COLORS
     for k_n, k_v in config['LOOK']['COLORS']['DEFAULT'].items():
         if k_v is None:
             continue
@@ -352,10 +356,10 @@ def type_check_values(config: dict):
     for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
         if k_v is None:
             continue
-        if not isinstance(k_v, list):
+        if not isinstance(k_v, list) and not isinstance(k_v, str):
             raise TypeError(f'Config for LOOK:COLORS:DEFAULT:RGB:{k_n}'
-                            f' must be of type list.')
-        else:
+                            f' must be of type list or str (hex).')
+        elif isinstance(k_v, list):
             try:
                 for i in config['LOOK']['COLORS']['RGB'][k_n]:
                     int(i)
@@ -365,6 +369,7 @@ def type_check_values(config: dict):
 
 
 def value_check_values(config: dict):
+    # CONTROLS
     for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
         if k_v is None:
             continue
@@ -386,6 +391,7 @@ def value_check_values(config: dict):
             raise ValueError(f'{k_v} is not an acceptable for'
                              f' CONTROLS:MOUSE:{k_n}.')
 
+    # SETUP
     if (config['SETUP']['MIN_WIDTH'] is not None
             and int(config['SETUP']['MIN_WIDTH']) < 2):
         raise ValueError(f'Config at SETUP:MIN_WIDTH cannot be less than 2.')
@@ -420,6 +426,7 @@ def value_check_values(config: dict):
             raise ValueError(
                 f'Config at SETUP:{d.name}:RATIO cannot be greater than 1.')
 
+    # HIGHSCORES
     if config['HIGHSCORES']['MAX_NAME_LENGTH'] is not None and int(
             config['HIGHSCORES']['MAX_NAME_LENGTH']) < 1:
         raise ValueError(
@@ -431,22 +438,63 @@ def value_check_values(config: dict):
             raise ValueError(
                 f'Config at HIGHSCORES:{k_n} cannot be less than 0.')
 
+    # LOOK: COLORS
+    for k_n, k_v in config['LOOK']['COLORS']['DEFAULT'].items():
+        if k_v is None:
+            continue
+        if int(k_v) < -1:
+            raise ValueError(f'Config at LOOK:COLORS:DEFAULT:{k_n}'
+                             f' cannot be less than -1')
+
     for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
         if k_v is None:
             continue
-        if len(k_v) != 3:
-            raise ValueError(
-                f'Config at LOOK:COLORS:RGB:{k_n} must be a list of length 3.')
-        else:
-            for i in k_v:
-                if i < 0:
-                    raise ValueError(
-                        f'Config at LOOK:COLORS:RGB:{k_n}[{i}]'
-                        f' must be greater than 0.')
-                if i > 1000:
-                    raise ValueError(
-                        f'Config at LOOK:COLORS:RGB:{k_n}[{i}]'
-                        f' must be less than 1000.')
+        if isinstance(k_v, list):
+            if len(k_v) != 3:
+                raise ValueError(f'Config at LOOK:COLORS:RGB:{k_n}'
+                                 f' must be a list of length 3.')
+            else:
+                for i in k_v:
+                    if i < 0:
+                        raise ValueError(
+                            f'Config at LOOK:COLORS:RGB:{k_n}[{i}]'
+                            f' must be greater than 0.')
+                    if i > 1000:
+                        raise ValueError(
+                            f'Config at LOOK:COLORS:RGB:{k_n}[{i}]'
+                            f' must be less than 1000.')
+        elif isinstance(k_v, str):
+            if not is_hex(k_v):
+                raise ValueError(f'Config at LOOK:COLORS:RGB:{k_n} is not a '
+                                 f'valid hex code.')
+
+
+def is_hex(hex_color: str) -> bool:
+    h = hex_color.lstrip('#').strip().upper()
+    if len(h) != 6:
+        return False
+    for c in h:
+        if c not in '0123456789ABCDEF':
+            return False
+    return True
+
+
+def replace_hex(config: dict) -> dict:
+    for k_n, k_v in config['LOOK']['COLORS']['RGB'].items():
+        if k_v is None:
+            continue
+        if isinstance(k_v, list):
+            continue
+        if isinstance(k_v, str):
+            config['LOOK']['COLORS']['RGB'][k_n] = hex_to_list(k_v)
+    return config
+
+
+def hex_to_list(hex_color: str) -> [int]:
+    h = hex_color.lstrip('#').strip().upper()
+    lv = len(h)
+    t = [int(h[i:i + lv // 3], 16) for i in range(0, lv, lv // 3)]
+    return [(1000 * i) // 255 for i in t]
 
 
 if __name__ == '__main__':
