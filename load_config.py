@@ -134,6 +134,7 @@ def fill_uninitialized_values(config: dict) -> dict:
 
     # adding hardcoded values for controls if none are specified
     hard_coded_keyboard = hard_coded['CONTROLS']['KEYBOARD']
+    hard_coded_mouse = hard_coded['CONTROLS']['KEYBOARD']
     if not config.get('CONTROLS'):
         config['CONTROLS'] = {}
     if not config['CONTROLS'].get('KEYBOARD'):
@@ -143,6 +144,9 @@ def fill_uninitialized_values(config: dict) -> dict:
     for k_n, k_v in hard_coded_keyboard.items():
         if config['CONTROLS']['KEYBOARD'].get(k_n) is None:
             config['CONTROLS']['KEYBOARD'][k_n] = None
+    for k_n, k_v in hard_coded_mouse.items():
+        if config['CONTROLS']['MOUSE'].get(k_n) is None:
+            config['CONTROLS']['MOUSE'][k_n] = None
 
     always_set = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'REVEAL', 'FLAG', 'RESET',
                   'HELP', 'MENU', 'EXIT']
