@@ -17,10 +17,9 @@ import load_config
 # TODO:
 # change default colors
 # allow editing all symbol colors (flag and mine and unopened)
+# seeded runs
 
 # put config in canonical location
-# type check config values
-# check curses keycodes are valid
 # allow hex codes OR rgb lists
 # consolidate keyboard/mouse config (allow multiple options)
 # in game settings / config editor
