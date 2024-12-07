@@ -134,36 +134,68 @@ def default_config() -> dict:
 
 
 def initialize_structure(config: dict) -> dict:
+    hard_coded = default_config()
+
     if not config.get('CONTROLS'):
         config['CONTROLS'] = {}
     if not config['CONTROLS'].get('KEYBOARD'):
         config['CONTROLS']['KEYBOARD'] = {}
     if not config['CONTROLS'].get('MOUSE'):
         config['CONTROLS']['MOUSE'] = {}
+    for k_n, k_v in hard_coded['CONTROLS']['KEYBOARD'].items():
+        if config['CONTROLS']['KEYBOARD'].get(k_n) is None:
+            config['CONTROLS']['KEYBOARD'][k_n] = None
+    for k_n, k_v in hard_coded['CONTROLS']['MOUSE'].items():
+        if config['CONTROLS']['MOUSE'].get(k_n) is None:
+            config['CONTROLS']['MOUSE'][k_n] = None
 
     if not config.get('SETUP'):
         config['SETUP'] = {}
-    if config['SETUP'].get('BEGINNER') is None:
-        config['SETUP']['BEGINNER'] = {}
-    if config['SETUP'].get('INTERMEDIATE') is None:
-        config['SETUP']['INTERMEDIATE'] = {}
-    if config['SETUP'].get('EXPERT') is None:
-        config['SETUP']['EXPERT'] = {}
+    for k_n, k_v in hard_coded['SETUP'].items():
+        if config['SETUP'].get(k_n) is None:
+            config['SETUP'][k_n] = None
+    from meeleymine import Difficulty
+    for d in Difficulty:
+        if d == Difficulty.CUSTOM:
+            continue
+        if config['SETUP'].get(d.name) is None:
+            config['SETUP'][d.name] = {}
+    for d in Difficulty:
+        if d == Difficulty.CUSTOM:
+            continue
+        if config['SETUP'][d.name].get('WIDTH') is None:
+            config['SETUP'][d.name]['WIDTH'] = None
+        if config['SETUP'][d.name].get('HEIGHT') is None:
+            config['SETUP'][d.name]['HEIGHT'] = None
+        if config['SETUP'][d.name].get('RATIO') is None:
+            config['SETUP'][d.name]['RATIO'] = None
 
     if not config.get('HIGHSCORES'):
         config['HIGHSCORES'] = {}
+    for k_n, k_v in hard_coded['HIGHSCORES'].items():
+        if config['HIGHSCORES'].get(k_n) is None:
+            config['HIGHSCORES'][k_n] = None
 
     if not config.get('LOOK'):
         config['LOOK'] = {}
     if not config['LOOK'].get('SYMBOLS'):
         config['LOOK']['SYMBOLS'] = {}
+    for k_n, k_v in hard_coded['LOOK']['SYMBOLS'].items():
+        if config['LOOK']['SYMBOLS'].get(k_n) is None:
+            config['LOOK']['SYMBOLS'][k_n] = None
 
     if not config['LOOK'].get('COLORS'):
         config['LOOK']['COLORS'] = {}
     if not config['LOOK']['COLORS'].get('DEFAULT'):
         config['LOOK']['COLORS']['DEFAULT'] = {}
+    for k_n, k_v in hard_coded['LOOK']['COLORS']['DEFAULT'].items():
+        if config['LOOK']['COLORS']['DEFAULT'].get(k_n) is None:
+            config['LOOK']['COLORS']['DEFAULT'][k_n] = None
     if not config['LOOK']['COLORS'].get('RGB'):
         config['LOOK']['COLORS']['RGB'] = {}
+    for k_n, k_v in hard_coded['LOOK']['COLORS']['RGB'].items():
+        if config['LOOK']['COLORS']['RGB'].get(k_n) is None:
+            config['LOOK']['COLORS']['RGB'][k_n] = None
 
     return config
 
@@ -172,28 +204,20 @@ def fill_uninitialized_values(config: dict) -> dict:
     hard_coded = default_config()
 
     # adding hardcoded values for controls if none are specified
-    hard_coded_keyboard = hard_coded['CONTROLS']['KEYBOARD']
-    hard_coded_mouse = hard_coded['CONTROLS']['KEYBOARD']
-    for k_n, k_v in hard_coded_keyboard.items():
-        if config['CONTROLS']['KEYBOARD'].get(k_n) is None:
-            config['CONTROLS']['KEYBOARD'][k_n] = None
-    for k_n, k_v in hard_coded_mouse.items():
-        if config['CONTROLS']['MOUSE'].get(k_n) is None:
-            config['CONTROLS']['MOUSE'][k_n] = None
 
     always_set = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'REVEAL', 'FLAG', 'RESET',
                   'HELP', 'MENU', 'EXIT']
     for k in always_set:
         if config['CONTROLS']['KEYBOARD'].get(k) is None \
                 and config['CONTROLS']['MOUSE'].get(k) is None:
-            config['CONTROLS']['KEYBOARD'][k] = hard_coded_keyboard[k]
+            config['CONTROLS']['KEYBOARD'][k] = hard_coded['CONTROLS']['KEYBOARD'][k]
 
     # adding hardcoded values for setup if none are specified
     hard_coded_setup = hard_coded['SETUP']
     if config['SETUP'].get('NO_FLASH') is None:
-        config['SETUP']['NO_FLASH'] = hard_coded_setup['NO_FLASH']
+        config['SETUP']['NO_FLASH'] = hard_coded['SETUP']['NO_FLASH']
     if config['SETUP'].get('WRAP_AROUND') is None:
-        config['SETUP']['WRAP_AROUND'] = hard_coded_setup['WRAP_AROUND']
+        config['SETUP']['WRAP_AROUND'] = hard_coded['SETUP']['WRAP_AROUND']
     if config['SETUP'].get('MIN_WIDTH') is None:
         config['SETUP']['MIN_WIDTH'] = hard_coded_setup['MIN_WIDTH']
     if config['SETUP'] and config['SETUP'].get('MIN_HEIGHT') is None:
@@ -205,8 +229,6 @@ def fill_uninitialized_values(config: dict) -> dict:
     from meeleymine import Difficulty
     for d in Difficulty:
         for b_n, b_v in hard_coded_setup.get(d.name, {}).items():
-            if not config['SETUP'].get(d.name):
-                config['SETUP'][d.name] = {}
             if config['SETUP'][d.name].get(b_n) is None:
                 config['SETUP'][d.name][b_n] = b_v
 
