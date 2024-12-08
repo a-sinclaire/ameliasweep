@@ -407,7 +407,6 @@ class Board:
         if not self.in_bounds(self.cursor):
             return
 
-        curses.beep()
         if self.is_first_click:
             self.populate()
             self.is_first_click = False
