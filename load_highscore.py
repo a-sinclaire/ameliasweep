@@ -78,7 +78,8 @@ def get_scores_for_difficulty(highscore_data: [[Any, str,
 
 def load_highscores_for_difficulty(difficulty: Any) \
         -> [Any, str, datetime.timedelta]:
-    return [x for x in load_real_highscores() if x[0].value == difficulty.value]
+    return\
+        [x for x in load_real_highscores() if x[0].value == difficulty.value]
 
 
 def add_and_save_scores(
@@ -160,7 +161,7 @@ EXPERT PLACID 00:35:00.000000
 
 def generate_dummy_if_needed() -> None:
     try:
-        with open(highscore_filepath, 'r') as f:
+        with open(highscore_filepath, 'r'):
             pass
     except FileNotFoundError:
         generate_dummy()

@@ -367,7 +367,7 @@ def value_check_values(config: dict):
                     continue
                 if len(i) == 1 and i in ((r' `1234567890-=qwertyuiop[]\asdfgh'
                                           r'jkl;zxcvbnm,./~!@#$%^&*()_+QWERTY'
-                                          r'UIOP{}|ASDFGHJKL:"ZXCVBNM<>?')
+                                          r'UI OP{}|ASDFGHJKL:"ZXCVBNM<>?')
                                          + "'\n"):
                     continue
                 try:

@@ -260,7 +260,6 @@ class Board:
             w = self.full_width
         else:
             w = self.width
-        raw_highscore_data: [[str, str, str]] = []
         new_highscore = False
 
         # read in data
@@ -281,9 +280,9 @@ class Board:
             # Get player's name
             self.display()
             self.win.addstr(f'{"NEW HIGHSCORE!!!":^{w}}',
-                               curses.A_BOLD
-                               | curses.A_REVERSE
-                               | curses.A_BLINK)
+                            curses.A_BOLD
+                            | curses.A_REVERSE
+                            | curses.A_BLINK)
             name = raw_input(self.win, self.height + 7, 0,
                              prompt='Enter Name:')
             # remove invalid characters (white spaces and quotes)
@@ -411,7 +410,7 @@ class Board:
         # title
         w = len(str(len(highscores))) + max_name_length + 22
         self.win.addstr(f'{f"{self.difficulty.name} HIGH SCORES":^{w}}\n',
-                           title_format)
+                        title_format)
 
         # list scores
         for idx, score in enumerate(highscores[:max_scores]):
@@ -431,7 +430,7 @@ class Board:
                     title_format)
             else:
                 self.win.addstr(f'{score[1]:<{max_name_length}} |'
-                                   f' {score[2]}\n')
+                                f' {score[2]}\n')
         self.win.nodelay(False)
         self.win.refresh()
         self.win.getch()
@@ -509,7 +508,8 @@ class Board:
                         self.win.addstr(']', selector_format)
                         continue
                     # highlight death location
-                    if self.death == (rid, cid) and self.state == GameState.LOST:
+                    if self.death == (
+                            rid, cid) and self.state == GameState.LOST:
                         self.win.addstr('[', death_format)
                         cell.display(self.win, self.symbols)
                         self.win.addstr(']', death_format)
@@ -529,11 +529,13 @@ class Board:
 
             reset_key = control_str(self.config["CONTROLS"]["RESET"])
             if self.state == GameState.LOST:
-                self.win.addstr(f'{"YOU LOSE!":^{self.full_width}}\n', title_format)
+                self.win.addstr(f'{"YOU LOSE!":^{self.full_width}}\n',
+                                title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
             elif self.state == GameState.WON:
-                self.win.addstr(f'{"YOU WIN!":^{self.full_width}}\n', title_format)
+                self.win.addstr(f'{"YOU WIN!":^{self.full_width}}\n',
+                                title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
         else:
@@ -563,7 +565,7 @@ class Board:
                         continue
                     # highlight death location
                     if self.death == (
-                    rid, cid) and self.state == GameState.LOST:
+                            rid, cid) and self.state == GameState.LOST:
                         cell.display(self.win, self.symbols)
                         continue
                     # flash all flags if won
@@ -578,12 +580,12 @@ class Board:
             reset_key = control_str(self.config["CONTROLS"]["RESET"])
             if self.state == GameState.LOST:
                 self.win.addstr(f'{"YOU LOSE!":^{self.width}}\n',
-                                   title_format)
+                                title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.width}}\n')
             elif self.state == GameState.WON:
                 self.win.addstr(f'{"YOU WIN!":^{self.width}}\n',
-                                   title_format)
+                                title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.width}}\n')
 
@@ -959,13 +961,13 @@ def splash(win: curses.window, config: dict) -> None:
     # DISPLAY OPTIONS
     for diff in Difficulty:
         win.addstr(f'[')
-        win.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1)%8))
+        win.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1) % 8))
         show_option(diff)
     win.addstr('\n')
     win.addstr(f'[')
     exit_spot = win.getyx()
     win.addstr(f'5', curses.color_pair((len(
-        Difficulty) + 1)%8))
+        Difficulty) + 1) % 8))
     win.addstr(f'] Exit\n\n')
 
     # DISPLAY all symbols (useful if changing themes:)
@@ -990,7 +992,7 @@ def splash(win: curses.window, config: dict) -> None:
             for diff in Difficulty:
                 win.addstr(f'[')
                 win.addstr(f'{diff.value + 1}',
-                              curses.color_pair((diff.value+1)%8))
+                           curses.color_pair((diff.value+1) % 8))
                 show_option(diff)
             win.addstr('\n')
 
@@ -1163,9 +1165,10 @@ def main_loop(win: curses.window, board: Board, config: dict) -> None:
             if board.state != GameState.PAUSED:
                 board.display()
                 if term_width > board.full_width:
-                    win.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
+                    w = board.full_width
                 else:
-                    win.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
+                    w = board.width
+                win.addstr(f'{f"Press {help_str} for help.":^{w}}')
                 win.noutrefresh()
                 win.refresh()
             continue
@@ -1173,9 +1176,10 @@ def main_loop(win: curses.window, board: Board, config: dict) -> None:
             win.clear()
             board.display()
             if term_width > board.full_width:
-                win.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
+                w = board.full_width
             else:
-                win.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
+                w = board.width
+            win.addstr(f'{f"Press {help_str} for help.":^{w}}')
         win.refresh()
 
     raise SystemExit(0)
@@ -1185,7 +1189,6 @@ def mouse_helper(controls: {str, List[int]}, command: str, bstate: int)\
         -> bool:
     if controls.get(command) is None:
         return False
-    attr: int | None = None
     for o in controls.get(command):
         try:
             attr = getattr(curses, str(o))
