@@ -48,24 +48,30 @@ Many features of the game can be customized by editing values in the `config.yam
 
 
 ## Game Customization:
-Highscores can only be distinguished for the preset difficulties. Custom games all have the label `CUSTOM`. You can modify what your own presets look like by modifying the values in the `config.yaml` file under `SETUP`. This allows you to define the board height, width, and ratio of mines. The ratio should be a value between 0 and 1.
+The game has three preset difficulties: `BEGINNER`, `INTERMEDIATE`, and `EXPERT`. Any game that falls outside of these presets is a `CUSTOM` game. Custom games all have the label `CUSTOM`. You can modify what your own presets look like by modifying the values in the `config.yaml` file under `SETUP`. This allows you to define the board height, width, and ratio of mines. The ratio should be a value between 0 and 1.
 
 Note: If you modify these values the highscores will persist for the old settings. You may want to clear out the highscore file.
 
 ## Highscore Customization
+Highscores are only distinguished for the three present difficulties: `BEGINNER`, `INTERMEDIATE`, and `EXPERT`.
+`CUSTOM` games will also have a high score saved, but the settings for that game will not be saved or shown in the listing.
+
 By default, saved names will be shortened to 6 characters. And only the top 10 in each category will be saved. If there are less than 10 highscores in a category then any score will count as a highscore.
 
 The name length and highscore list length can be modified in the `config.yaml` under the section labeled `HIGHSCORES`.
 
 ## Control Customization:
-### Keyboard:
-In the configuration file there is a section labeled `KEYBOARD` under `CONTROLS` which allows you to change the default key bindings for each action.
-
-The notation used is `curses` KeyCodes.\
-A list of available `curses` Keycodes can be found at the bottom of this `README.md`.
+In the configuration file there is a section labeled  `CONTROLS` which allows you to change the default key bindings for each action. Each action can take a list of as many keybinds as you choose. For example, you could have the space bar OR the enter key open a cell.
 
 On some terminals keys may not produce the KeyCodes you expect.\
-For example the left arrow may produce an `A` instead of a `KEY_LEFT`.
+For example the left arrow may produce an `A` instead of a `KEY_LEFT`, or the enter key may produce a new line character instead of `KEY_ENTER`. Setting different actions to the same key is undefined behavior.
+
+The notation used is `curses` KeyCodes.\
+A list of available `curses` KeyCodes can be found at the bottom of this `README.md`.
+
+By default, the only actions enabled on the mouse are opening and flagging cells. A value of `NULL` indicates it is not set.
+
+*Warning: The mouse controls can be a bit janky at times. Use with caution.*
 
 If you would like to check to see what KeyCodes your keyboard and terminal is producing, run the following script:
 ```python
@@ -84,15 +90,6 @@ if __name__ == '__main__':
     curses.wrapper(main)
 ```
 You can use `CTRL+C` to exit this script.
-
-### Mouse:
-In the configuration file there is a section labeled `MOUSE` under `CONTROLS` which allows you to change the default mouse bindings for each action.
-
-By default, the only actions enabled on the mouse are opening and flagging cells. A value of `NULL` indicates it is not set. 
-
-A list of available `curses` MouseCodes can be found at the bottom of this `README.md`.
-
-*Warning: The mouse controls can be a bit janky at times. Use with caution.*
 
 ## Look Customization:
 ### Symbols:
