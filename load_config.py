@@ -24,6 +24,7 @@ def load_config() -> dict:
     type_check_values(config)
     value_check_values(config)
     config = replace_hex(config)
+    config = replace_none_default_colors(config)
     config = put_controls_in_list(config)
     return fill_uninitialized_values(config)
 
@@ -102,6 +103,9 @@ def default_config() -> dict:
                                             'SIX': 6,
                                             'SEVEN': 8,
                                             'EIGHT': 7,
+                                            'MINE': None,
+                                            'FLAG': None,
+                                            'UNOPENED': None,
                                             'SELECTOR': 3,
                                             'LOSE': 1,
                                             'WIN': 2},
@@ -116,6 +120,9 @@ def default_config() -> dict:
                                         'SIX': '#257179',
                                         'SEVEN': '#566c86',
                                         'EIGHT': '#94b0c2',
+                                        'MINE': None,
+                                        'FLAG': None,
+                                        'UNOPENED': None,
                                         'SELECTOR': '#ffcd75',
                                         'LOSE': '#b13e53',
                                         'WIN': '#a7f070'}}}}
@@ -466,6 +473,13 @@ def replace_hex(config: dict) -> dict:
             continue
         if isinstance(k_v, str):
             config['LOOK']['COLORS']['RGB'][k_n] = hex_to_list(k_v)
+    return config
+
+
+def replace_none_default_colors(config: dict) -> dict:
+    for k_n, k_v in config['LOOK']['COLORS']['DEFAULT'].items():
+        if k_v is None:
+            config['LOOK']['COLORS']['DEFAULT'][k_n] = -1
     return config
 
 

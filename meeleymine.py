@@ -15,7 +15,6 @@ import load_config
 
 
 # TODO:
-# allow editing all symbol colors (flag and mine and unopened)
 # seeded runs
 
 # put config in canonical location
@@ -68,13 +67,13 @@ class Cell(Enum):
 
     def display(self, stdscr: curses.window, symbols: {str: str},
                 display_format=None) -> None:
-        if self == self.FLAG and display_format:
+        if display_format:
             stdscr.addstr(symbols[self.name], display_format)
-        elif self.ONE <= self <= self.EIGHT:
+        else:
             color = curses.color_pair(int(self.value))
             stdscr.addstr(symbols[self.name], color)
-        else:
-            stdscr.addstr(symbols[self.name])
+        # else:
+        #     stdscr.addstr(symbols[self.name])
 
     def print(self, symbols):
         return symbols[self.name]
@@ -96,6 +95,22 @@ class Board:
                                                   minute=0,
                                                   second=0,
                                                   microsecond=0)
+    str_to_id = {'ONE': 1,
+                 'TWO': 2,
+                 'THREE': 3,
+                 'FOUR': 4,
+                 'FIVE': 5,
+                 'SIX': 6,
+                 'SEVEN': 7,
+                 'EIGHT': 8,
+                 'MINE': 9,
+                 'FLAG': 10,
+                 'UNOPENED': 11,
+                 'SELECTOR': 12,
+                 'LOSE': 13,
+                 'WIN': 14,
+                 'BG': 15,
+                 'FG': 16}
 
     def __init__(self, width: int, height: int, mine_ratio: float,
                  difficulty: Difficulty, config: dict,
@@ -430,7 +445,7 @@ class Board:
             self.stdscr.addstr(f'[')
             # do cute color matching for numbers
             num = idx + 1
-            self.stdscr.addstr(str(num), curses.color_pair((num % 8)) + 1)
+            self.stdscr.addstr(str(num), curses.color_pair((idx % 8)+1))
             # add closing bracket with some spacing to make everything line up
             spaces = " " * (len(str(len(scores_str))) - len(str(num)) + 2)
             self.stdscr.addstr(f']{spaces}')
@@ -467,23 +482,29 @@ class Board:
     def display(self) -> None:
         if curses.has_colors():
             selector_format = (curses.A_BLINK
-                               | curses.color_pair(9)
+                               | curses.color_pair(Board.str_to_id[
+                        'SELECTOR'])
                                | curses.A_BOLD)
             death_format = (curses.A_BLINK
-                            | curses.color_pair(10)
+                            | curses.color_pair(Board.str_to_id[
+                        'LOSE'])
                             | curses.A_BOLD)
             win_format = (curses.A_BLINK
-                          | curses.color_pair(11)
+                          | curses.color_pair(Board.str_to_id[
+                        'WIN'])
                           | curses.A_BOLD)
         else:
             selector_format = (curses.A_REVERSE
-                               | curses.color_pair(9)
+                               | curses.color_pair(Board.str_to_id[
+                        'SELECTOR'])
                                | curses.A_BOLD)
             death_format = (curses.A_REVERSE
-                            | curses.color_pair(10)
+                            | curses.color_pair(Board.str_to_id[
+                        'LOSE'])
                             | curses.A_BOLD)
             win_format = (curses.A_REVERSE
-                          | curses.color_pair(11)
+                          | curses.color_pair(Board.str_to_id[
+                        'WIN'])
                           | curses.A_BOLD)
 
         # show timer next
@@ -543,19 +564,7 @@ class Board:
 
 
 def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
-    str_to_id = {'ONE': 1,
-                 'TWO': 2,
-                 'THREE': 3,
-                 'FOUR': 4,
-                 'FIVE': 5,
-                 'SIX': 6,
-                 'SEVEN': 7,
-                 'EIGHT': 8,
-                 'SELECTOR': 9,
-                 'LOSE': 10,
-                 'WIN': 11,
-                 'BG': 12,
-                 'FG': 13}
+    str_to_id = Board.str_to_id
     defaults: {str, int} = colors['DEFAULT']
     rgbs: {str: [int]} = colors['RGB']
 
@@ -939,13 +948,13 @@ def splash(stdscr: curses.window, config: dict) -> None:
     # DISPLAY OPTIONS
     for diff in Difficulty:
         stdscr.addstr(f'[')
-        stdscr.addstr(f'{diff.value + 1}', curses.color_pair(diff.value + 1))
+        stdscr.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1)%8))
         show_option(diff)
     stdscr.addstr('\n')
     stdscr.addstr(f'[')
     exit_spot = stdscr.getyx()
-    stdscr.addstr(f'5', curses.color_pair(len(
-        Difficulty) + 1))
+    stdscr.addstr(f'5', curses.color_pair((len(
+        Difficulty) + 1)%8))
     stdscr.addstr(f'] Exit\n\n')
 
     # DISPLAY all symbols (useful if changing themes:)
@@ -970,7 +979,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
             for diff in Difficulty:
                 stdscr.addstr(f'[')
                 stdscr.addstr(f'{diff.value + 1}',
-                              curses.color_pair(diff.value + 1))
+                              curses.color_pair((diff.value+1)%8))
                 show_option(diff)
             stdscr.addstr('\n')
 
