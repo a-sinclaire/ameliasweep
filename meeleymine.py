@@ -20,14 +20,16 @@ import load_config
 # seeded runs
 
 # put config in canonical location
-# allow hex codes OR rgb lists
-# consolidate keyboard/mouse config (allow multiple options)
 # in game settings / config editor
 
 # resize entire game (if possible) based on terminal size
 # revert back to normal terminal colors on exit
 
 # let user define own game modes other than the 3 basics?
+
+# make script to test mouse buttons, like done for keyboard in readme.
+# make those scripts a bit better?
+# make readme nicer
 
 
 class Difficulty(Enum):
@@ -529,14 +531,15 @@ class Board:
             self.stdscr.addstr('\n')
         self.stdscr.addstr('\n')
 
-        reset_key = control_str(self.config["CONTROLS"]["KEYBOARD"]["RESET"],
-                                self.config["CONTROLS"]["MOUSE"]["RESET"])
+        reset_key = control_str(self.config["CONTROLS"]["RESET"])
         if self.state == GameState.LOST:
             self.stdscr.addstr(f'{"YOU LOSE!":^{self.middle}}\n', title_format)
-            self.stdscr.addstr(f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
+            self.stdscr.addstr(
+                f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
         elif self.state == GameState.WON:
             self.stdscr.addstr(f'{"YOU WIN!":^{self.middle}}\n', title_format)
-            self.stdscr.addstr(f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
+            self.stdscr.addstr(
+                f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
 
 
 def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
@@ -647,12 +650,14 @@ def setup(stdscr: curses.window) -> None:
 
     # verifies the values passed in via cli are appropriate
     if min_width and args.width < min_width:
-        raise ValueError(f'Invalid width: {args.width}. Must be >= {min_width}')
+        raise ValueError(
+            f'Invalid width: {args.width}. Must be >= {min_width}')
     if min_height and args.height < min_height:
         raise ValueError(
             f'Invalid height: {args.height}. Must be >= {min_height}')
     if max_width and args.width > max_width:
-        raise ValueError(f'Invalid width: {args.width}. Must be <= {max_width}')
+        raise ValueError(
+            f'Invalid width: {args.width}. Must be <= {max_width}')
     if max_height and args.height > max_height:
         raise ValueError(
             f'Invalid height: {args.height}. Must be <= {max_width}')
@@ -764,31 +769,30 @@ def logo(stdscr: curses.window) -> None:
 
 
 # used as a helper for help screen
-def control_str(config1: str | None, config2: str | None = None) -> str:
-    if config1 == ' ':
-        config1 = 'space'
-    if config2 == ' ':
-        config2 = 'space'
-
-    if config1 is not None and config2 is not None:
-        return f'[{config1.upper()}] OR [{config2.upper()}]'
-    if config1 is not None:
-        return f'[{config1.upper()}]'
-    if config2 is not None:
-        return f'[{config2.upper()}]'
-    return '{NO KEY SET}'
+def control_str(configs: [str]) -> str:
+    out = ''
+    for c in configs:
+        if c is None:
+            continue
+        if c == '':
+            out += f'[{c.upper()}]'
+        else:
+            out += f' OR [{c.upper()}]'
+    out = out.strip()
+    if out == '':
+        return '{NO KEY SET}'
+    return out
 
 
 def show_help(stdscr: curses.window, config: dict) -> None:
-    keyboard = config["CONTROLS"]["KEYBOARD"]
-    mouse = config["CONTROLS"]["MOUSE"]
+    controls = config["CONTROLS"]
     stdscr.clear()
     stdscr.addstr('HELP\n\n')
-    longest_cmd = max(keyboard.keys(), key=len)
-    for command in keyboard.keys():
+    longest_cmd = max(controls.keys(), key=len)
+    for command in controls.keys():
         stdscr.addstr(
             f'{command + ":":<{1 + len(longest_cmd)}} '
-            f'{control_str(keyboard.get(command), mouse.get(command))}\n')
+            f'{control_str(controls.get(command))}\n')
 
 
 def display_sample(stdscr: curses.window, config: dict) -> None:
@@ -955,7 +959,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
             key = stdscr.getkey(0, 0)
         except curses.error:
             key = curses.ERR
-        if key == config["CONTROLS"]["KEYBOARD"].get("EXIT"):
+        if key in config["CONTROLS"].get("EXIT"):
             raise SystemExit(0)
         if key == 'KEY_RESIZE':
             stdscr.clear()
@@ -1050,9 +1054,8 @@ def splash(stdscr: curses.window, config: dict) -> None:
 
 
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
-    keyboard = config["CONTROLS"]["KEYBOARD"]
-    mouse = config["CONTROLS"]["MOUSE"]
-    help_str = control_str(keyboard.get("HELP"), mouse.get("HELP"))
+    controls = config["CONTROLS"]
+    help_str = control_str(controls.get("HELP"))
     # show board
     stdscr.clear()
     board.display()
@@ -1064,33 +1067,34 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             key = stdscr.getkey(0, 0)
         except curses.error:
             key = curses.ERR
-        if key == keyboard.get("EXIT"):
+        if key in controls.get("EXIT"):
             break
-        elif key == keyboard.get("HELP"):
+        elif key in controls.get("HELP"):
             board.pause()
             show_help(stdscr, config)
-        elif key == keyboard.get("HIGHSCORES"):
+        elif key in controls.get("HIGHSCORES"):
             board.show_highscores()
-        elif key == keyboard.get("MENU"):
+        elif key in controls.get("MENU"):
             splash(stdscr, config)
             break
-        elif key == keyboard.get("REVEAL"):
+        elif key in controls.get("REVEAL"):
             board.reveal()
-        elif key == keyboard.get("FLAG"):
+        elif key in controls.get("FLAG"):
             board.flag()
-        elif key == keyboard.get("RESET"):
+        elif key in controls.get("RESET"):
             board.reset()
-        elif (key == keyboard.get("LEFT") or
-              key == keyboard.get("RIGHT") or
-              key == keyboard.get("UP") or
-              key == keyboard.get("DOWN") or
-              key == keyboard.get("HOME") or
-              key == keyboard.get("END") or
-              key == keyboard.get("FLOOR") or
-              key == keyboard.get("CEILING")):
-            move_str = list(keyboard.keys())[
-                list(keyboard.values()).index(key)]
-            board.move_direction(move_str)
+        elif (key in controls.get("LEFT") or
+              key in controls.get("RIGHT") or
+              key in controls.get("UP") or
+              key in controls.get("DOWN") or
+              key in controls.get("HOME") or
+              key in controls.get("END") or
+              key in controls.get("FLOOR") or
+              key in controls.get("CEILING")):
+
+            for k_n, k_v in controls.items():
+                if key in k_v:
+                    board.move_direction(k_n)
         elif key == 'KEY_MOUSE':
             bstate = 0
             mx, my = (-1, -1)
@@ -1098,47 +1102,33 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 _, mx, my, _, bstate = curses.getmouse()
             except curses.error:
                 pass
-            if (mouse.get("EXIT")
-                    and (bstate & getattr(curses, mouse.get("EXIT")))):
+            if mouse_helper(controls, 'EXIT', bstate):
                 break
-            elif (mouse.get("HELP")
-                  and (bstate & getattr(curses, mouse.get("HELP")))):
+            elif mouse_helper(controls, 'HELP', bstate):
                 board.pause()
                 show_help(stdscr, config)
-            elif (mouse.get("HIGHSCORES")
-                  and (bstate & getattr(curses, mouse.get("HIGHSCORES")))):
+            elif mouse_helper(controls, 'HIGHSCORES', bstate):
                 board.show_highscores()
-            elif (mouse.get("MENU")
-                    and (bstate & getattr(curses, mouse.get("MENU")))):
+            elif mouse_helper(controls, 'MENU', bstate):
                 splash(stdscr, config)
                 break
-            elif (mouse.get("REVEAL")
-                  and (bstate & getattr(curses, mouse.get("REVEAL")))):
+            elif mouse_helper(controls, 'REVEAL', bstate):
                 if board.set_cursor_from_mouse(mx, my):
                     board.reveal()
-            elif (mouse.get("FLAG")
-                  and (bstate & getattr(curses, mouse.get("FLAG")))):
+            elif mouse_helper(controls, 'FLAG', bstate):
                 if board.set_cursor_from_mouse(mx, my):
                     board.flag()
-            elif ((mouse.get("LEFT")
-                   and (bstate & getattr(curses, mouse.get("LEFT"))))
-                  or (mouse.get("RIGHT")
-                      and (bstate & getattr(curses, mouse.get("RIGHT"))))
-                  or (mouse.get("UP")
-                      and (bstate & getattr(curses, mouse.get("UP"))))
-                  or (mouse.get("DOWN")
-                      and (bstate & getattr(curses, mouse.get("DOWN"))))
-                  or (mouse.get("HOME")
-                      and (bstate & getattr(curses, mouse.get("HOME"))))
-                  or (mouse.get("END")
-                      and (bstate & getattr(curses, mouse.get("END"))))
-                  or (mouse.get("FLOOR")
-                      and (bstate & getattr(curses, mouse.get("FLOOR"))))
-                  or (mouse.get("CEILING")
-                      and (bstate & getattr(curses, mouse.get("CEILING"))))):
-                move_str = list(keyboard.keys())[
-                    list(keyboard.values()).index(key)]
-                board.move_direction(move_str)
+            elif (mouse_helper(controls, 'LEFT', bstate)
+                  or mouse_helper(controls, 'RIGHT', bstate)
+                  or mouse_helper(controls, 'UP', bstate)
+                  or mouse_helper(controls, 'DOWN', bstate)
+                  or mouse_helper(controls, 'HOME', bstate)
+                  or mouse_helper(controls, 'END', bstate)
+                  or mouse_helper(controls, 'FLOOR', bstate)
+                  or mouse_helper(controls, 'CEILING', bstate)):
+                for k_n, k_v in controls.items():
+                    if key in k_v:
+                        board.move_direction(k_n)
         elif key == curses.ERR:
             if board.state != GameState.PAUSED:
                 board.display()
@@ -1153,6 +1143,20 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
         stdscr.refresh()
 
     raise SystemExit(0)
+
+
+def mouse_helper(controls: dict[str], command: str, bstate: int) -> bool:
+    if controls.get(command) is None:
+        return False
+    attr: int | None = None
+    for o in controls.get(command):
+        try:
+            attr = getattr(curses, str(o))
+        except (ValueError, AttributeError):
+            attr = None
+        if attr and bstate & attr:
+            return True
+    return False
 
 
 if __name__ == '__main__':
