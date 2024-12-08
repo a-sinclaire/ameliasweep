@@ -5,7 +5,6 @@ import shutil
 
 import yaml
 
-# TODO: maybe handle loading of highscores in here too?
 config_path = 'config.yaml'
 
 

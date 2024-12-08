@@ -12,11 +12,11 @@ import time
 from typing import Any, List
 
 import load_config
+import load_highscore
 
 
 # TODO:
 # should i display number of mines?
-# highscore loader
 
 # put config in canonical location
 
@@ -263,29 +263,11 @@ class Board:
         new_highscore = False
 
         # read in data
-        with open('highscores.csv', 'r') as csvfile:
-            reader = csv.reader(csvfile, delimiter=' ')
-            for row in reader:
-                # ignore blank lines
-                if ''.join(row).strip() == '':
-                    continue
-                raw_highscore_data.append(row)
-
-        # turn the score strings into timedelta objects
-        # and turn the difficulty strings into Difficulty objects
-        highscore_data: [[str, str, float]] = []
-        for idx, hs in enumerate(raw_highscore_data):
-            t = datetime.datetime.strptime(hs[2], '%H:%M:%S.%f')
-            this_difficulty = Difficulty[hs[0]]
-            this_name = hs[1]
-            this_score = datetime.timedelta(hours=t.hour, minutes=t.minute,
-                                            seconds=t.second,
-                                            microseconds=t.microsecond)
-            highscore_data.append([this_difficulty, this_name, this_score])
+        real_highscores = load_highscore.load_real_highscores()
 
         # get only scores for the selected Difficulty level
-        scores: [datetime.timedelta] = [x[2] for x in highscore_data
-                                        if x[0] == self.difficulty.name]
+        scores = load_highscore.get_scores_for_difficulty(real_highscores,
+                                                          self.difficulty)
 
         # check if current score is better than any score in highscore list
         max_scores = self.hs_config.get(self.difficulty.name + '_MAX')
@@ -312,38 +294,9 @@ class Board:
             else:
                 name = name.upper()
 
-            # add in the new score
-            highscore_data.append([self.difficulty, name, self.score])
-            # sort the scores
-            highscore_data = sorted(highscore_data,
-                                    key=operator.itemgetter(0, 2))
-
-            # convert back to strings
-            raw_highscore_data: [[str, str, str]]
-            raw_highscore_data = [[hs[0].name,
-                                   hs[1],
-                                   f'{Board.zero_time + hs[2]:%H:%M:%S.%f}']
-                                  for hs in highscore_data]
-
-            # split into separate arrays per difficulty level
-            total_list: [[[str, str, str]]] = []
-            for difficulty in Difficulty:
-                total_list.append([x for x in raw_highscore_data
-                                   if x[0] == difficulty.name])
-
-            # save the newly adjusted highscores
-            with open('highscores.csv', 'w') as csvfile:
-                writer = csv.writer(csvfile, delimiter=' ')
-                for cat in total_list:
-                    if not cat:
-                        continue
-                    max_scores = self.hs_config[cat[0][0] + '_MAX']
-                    if max_scores == math.inf:
-                        max_scores = len(cat)
-                    for hs in cat[:max_scores]:
-                        writer.writerow(hs)
-                    # add a gap between each difficulty level
-                    writer.writerow('')
+            load_highscore.add_and_save_scores(real_highscores,
+                                               self.difficulty, name,
+                                               self.score, max_scores)
         return new_highscore
 
     def write_game(self) -> None:
@@ -438,43 +391,34 @@ class Board:
 
     def show_highscores(self) -> None:
         self.pause()
-        raw_highscore_data: [[str, str, str]] = []
 
         # read in data
-        with open('highscores.csv', 'r') as csvfile:
-            reader = csv.reader(csvfile, delimiter=' ')
-            for row in reader:
-                # ignore blank lines
-                if ''.join(row).strip() == '':
-                    continue
-                raw_highscore_data.append(row)
+        highscores: [Difficulty, str, datetime.timedelta] = (
+            load_highscore.load_highscores_for_difficulty(self.difficulty))
 
-        # get only scores for the selected Difficulty level
-        scores_str: [[str, str, datetime.timedelta]] = \
-            [x for x in raw_highscore_data if x[0] == self.difficulty.name]
+        highscores = load_highscore.convert_real_to_raw(highscores)
 
-        difficulty_n = self.difficulty.name
-        max_scores = self.hs_config[f'{difficulty_n}_MAX']
+        max_scores = self.hs_config[f'{self.difficulty.name}_MAX']
         if max_scores == math.inf:
-            max_scores = len(scores_str)
+            max_scores = len(highscores)
         title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
         # clear the screen
         self.stdscr.clear()
 
         # title
         # TODO: center this text based on the width of the highscore screen
-        self.stdscr.addstr(f'{f"{difficulty_n} HIGH SCORES":^{self.middle}}\n',
+        self.stdscr.addstr(f'{f"{self.difficulty.name} HIGH SCORES":^{self.middle}}\n',
                            title_format)
 
         # list scores
-        max_name_length = len(max(scores_str, key=lambda x: len(x[1]))[1])
-        for idx, score in enumerate(scores_str[:max_scores]):
+        max_name_length = len(max(highscores, key=lambda x: len(x[1]))[1])
+        for idx, score in enumerate(highscores[:max_scores]):
             self.stdscr.addstr(f'[')
             # do cute color matching for numbers
             num = idx + 1
             self.stdscr.addstr(str(num), curses.color_pair((idx % 8) + 1))
             # add closing bracket with some spacing to make everything line up
-            spaces = " " * (len(str(len(scores_str))) - len(str(num)) + 2)
+            spaces = " " * (len(str(len(highscores))) - len(str(num)) + 2)
             self.stdscr.addstr(f']{spaces}')
 
             # if we are showing the highscores after someone got a new one
@@ -657,6 +601,7 @@ class _Sentinel:
 def setup(stdscr: curses.window) -> None:
     # loading config
     config = load_config.load_config()
+    load_highscore.generate_dummy_if_needed()
 
     # defaults and arg parse
     min_width = config['SETUP']['MIN_WIDTH']
@@ -887,35 +832,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
     expert_ratio = config["SETUP"]["EXPERT"]["RATIO"]
 
     # read in highscore data
-    raw_highscore_data: [[str, str, str]] = []
-    with open('highscores.csv', 'r') as csvfile:
-        reader = csv.reader(csvfile, delimiter=' ')
-        for row in reader:
-            # ignore blank lines
-            if ''.join(row).strip() == '':
-                continue
-            raw_highscore_data.append(row)
-
-    # turn the score strings into timedelta objects
-    # and turn the difficulty strings into Difficulty objects
-    highscore_data: [[str, str, float]] = []
-    for idx, hs in enumerate(raw_highscore_data):
-        t = datetime.datetime.strptime(hs[2], '%H:%M:%S.%f')
-        this_difficulty = Difficulty[hs[0]]
-        this_name = hs[1]
-        this_score = datetime.timedelta(hours=t.hour, minutes=t.minute,
-                                        seconds=t.second,
-                                        microseconds=t.microsecond)
-        highscore_data.append([this_difficulty, this_name, this_score])
-
-    # sort the scores (should not be necessary)
-    highscore_data = sorted(highscore_data, key=operator.itemgetter(0, 2))
-    # convert back to strings
-    raw_highscore_data: [[str, str, str]]
-    raw_highscore_data = [[hs[0].name,
-                           hs[1],
-                           f'{Board.zero_time + hs[2]:%H:%M:%S.%f}']
-                          for hs in highscore_data]
+    raw_highscore_data = load_highscore.load_raw_highscores()
 
     total_list: [[[str, str, str]]] = []
     for difficulty in Difficulty:
