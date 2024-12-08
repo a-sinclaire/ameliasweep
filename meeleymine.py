@@ -783,6 +783,10 @@ def control_str(configs: [str]) -> str:
     for c in configs:
         if c is None:
             continue
+        if c == ' ':
+            c = 'SPACE'
+        if c == '\n':
+            c = 'ENTER'
         if c == '':
             out += f'[{c.upper()}]'
         else:
