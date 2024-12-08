@@ -13,8 +13,11 @@ You can also specify the ratio of mines in the board as a float between 0 and 1:
 
 If no ratio is given the default number of mines will be equal to the square root of the board area.
 
-The game has some flash effects. If that is something you may be sensitive to please run with the `no-flash` option:\
+The game has some flash effects. If that is something you may be sensitive to please run with the `--no-flash` option:\
 `python meeleymine.py --no-flash`
+
+You can also seed the run using `--seed`. Note, when using a seed highscores will not be recorded.\
+`python meeleymine.py --seed 42`
 
 
 ## How to play:

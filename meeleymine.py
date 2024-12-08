@@ -15,20 +15,23 @@ import load_config
 
 
 # TODO:
-# seeded runs
+# should i display number of mines?
+# highscore loader
+# replay system? at least recording.
+# fix typing so it is compatible with older version of python
 
 # put config in canonical location
-# in game settings / config editor
 
 # resize entire game (if possible) based on terminal size
 # revert back to normal terminal colors on exit
-
-# let user define own game modes other than the 3 basics?
 
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
 # look at the other to-dos in the files
+
+# in game settings / config editor
+# let user define own game modes other than the 3 basics?
 
 
 class Difficulty(Enum):
@@ -163,6 +166,9 @@ class Board:
 
         self.state = GameState.PLAYING
         self.previous_state = self.state
+
+        if self.config['SEED'] is not None:
+            random.seed(self.config['SEED'])
 
         # flash on reset
         if not self.no_flash:
@@ -349,9 +355,10 @@ class Board:
             self.my_board[m[0]][m[1]] = Cell.FLAG
 
         # Update highscores
-        new_highscore = self.update_highscores()
-        if new_highscore:
-            self.show_highscores()
+        if self.config['SEED'] is None:
+            new_highscore = self.update_highscores()
+            if new_highscore:
+                self.show_highscores()
 
     def check_win(self) -> None:
         if self.state != GameState.PLAYING:
@@ -445,7 +452,7 @@ class Board:
             self.stdscr.addstr(f'[')
             # do cute color matching for numbers
             num = idx + 1
-            self.stdscr.addstr(str(num), curses.color_pair((idx % 8)+1))
+            self.stdscr.addstr(str(num), curses.color_pair((idx % 8) + 1))
             # add closing bracket with some spacing to make everything line up
             spaces = " " * (len(str(len(scores_str))) - len(str(num)) + 2)
             self.stdscr.addstr(f']{spaces}')
@@ -483,28 +490,28 @@ class Board:
         if curses.has_colors():
             selector_format = (curses.A_BLINK
                                | curses.color_pair(Board.str_to_id[
-                        'SELECTOR'])
+                                                       'SELECTOR'])
                                | curses.A_BOLD)
             death_format = (curses.A_BLINK
                             | curses.color_pair(Board.str_to_id[
-                        'LOSE'])
+                                                    'LOSE'])
                             | curses.A_BOLD)
             win_format = (curses.A_BLINK
                           | curses.color_pair(Board.str_to_id[
-                        'WIN'])
+                                                  'WIN'])
                           | curses.A_BOLD)
         else:
             selector_format = (curses.A_REVERSE
                                | curses.color_pair(Board.str_to_id[
-                        'SELECTOR'])
+                                                       'SELECTOR'])
                                | curses.A_BOLD)
             death_format = (curses.A_REVERSE
                             | curses.color_pair(Board.str_to_id[
-                        'LOSE'])
+                                                    'LOSE'])
                             | curses.A_BOLD)
             win_format = (curses.A_REVERSE
                           | curses.color_pair(Board.str_to_id[
-                        'WIN'])
+                                                  'WIN'])
                           | curses.A_BOLD)
 
         # show timer next
@@ -645,7 +652,12 @@ def setup(stdscr: curses.window) -> None:
     parser.add_argument('-r', '--ratio', default=default_ratio, type=float)
     parser.add_argument('--no-flash', action='store_true',
                         default=config['SETUP']['NO_FLASH'])
+    parser.add_argument('--seed', default=None, type=int)
     args = parser.parse_args()
+
+    config['SEED'] = args.seed
+    if args.seed is not None:
+        random.seed(args.seed)
 
     # this is a way to check which values were actually passed in
     # https://stackoverflow.com/questions/58594956/find-out-which-arguments-were-passed-explicitly-in-argparse
