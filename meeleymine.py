@@ -14,8 +14,6 @@ import load_highscore
 
 
 # TODO:
-# should i display number of mines?
-
 # put config in canonical location
 
 # revert back to normal terminal colors on exit
@@ -25,8 +23,11 @@ import load_highscore
 # make readme nicer
 # look at the other to-dos in the files
 
+# should I display number of mines?
+
+# Stretch Goals:
 # in game settings / config editor
-# let user define own game modes other than the 3 basics?
+# let user define own game modes other than the 3 basics
 
 
 class Difficulty(Enum):
@@ -597,7 +598,11 @@ def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
         curses.start_color()
         curses.use_default_colors()
         for i in range(0, curses.COLORS):
-            curses.init_pair(i + 1, i, -1)
+            try:
+                curses.init_pair(i + 1, i, -1)
+            except ValueError:
+                # sometimes error on Windows? idk. let's just ignore it
+                pass
 
         if curses.can_change_color():
             # use rgb values
