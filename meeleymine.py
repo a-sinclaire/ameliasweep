@@ -9,7 +9,7 @@ import math
 import operator
 import random
 import time
-from typing import Any
+from typing import Any, List
 
 import load_config
 
@@ -18,7 +18,6 @@ import load_config
 # should i display number of mines?
 # highscore loader
 # replay system? at least recording.
-# fix typing so it is compatible with older version of python
 
 # put config in canonical location
 
@@ -1179,7 +1178,8 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
     raise SystemExit(0)
 
 
-def mouse_helper(controls: dict[str], command: str, bstate: int) -> bool:
+def mouse_helper(controls: {str, List[int]}, command: str, bstate: int)\
+        -> bool:
     if controls.get(command) is None:
         return False
     attr: int | None = None
