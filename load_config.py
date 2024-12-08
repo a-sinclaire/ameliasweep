@@ -377,11 +377,11 @@ def value_check_values(config: dict):
 
     # SETUP
     if (config['SETUP']['MIN_WIDTH'] is not None
-            and int(config['SETUP']['MIN_WIDTH']) < 2):
-        raise ValueError(f'Config at SETUP:MIN_WIDTH cannot be less than 2.')
+            and int(config['SETUP']['MIN_WIDTH']) < 1):
+        raise ValueError(f'Config at SETUP:MIN_WIDTH cannot be less than 1.')
     if (config['SETUP']['MIN_HEIGHT'] is not None
-            and int(config['SETUP']['MIN_HEIGHT']) < 2):
-        raise ValueError(f'Config at SETUP:MIN_HEIGHT cannot be less than 2.')
+            and int(config['SETUP']['MIN_HEIGHT']) < 1):
+        raise ValueError(f'Config at SETUP:MIN_HEIGHT cannot be less than 1.')
     if (config['SETUP']['MAX_WIDTH'] is not None
             and int(config['SETUP']['MAX_WIDTH']) < 2):
         raise ValueError(f'Config at SETUP:MAX_WIDTH cannot be less than 2.')

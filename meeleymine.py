@@ -196,9 +196,13 @@ class Board:
     def populate(self) -> None:
         # set mines
         choices = [x for x in self.locations if x != self.cursor]
-        self.mines = random.sample(choices, k=self.n_mines)
-        for m_row, m_col in self.mines:
-            self.real_board[m_row][m_col] = Cell.MINE
+        if self.n_mines <= len(choices):
+            self.mines = random.sample(choices, k=self.n_mines)
+            for m_row, m_col in self.mines:
+                self.real_board[m_row][m_col] = Cell.MINE
+        else:
+            for m_row, m_col in self.locations:
+                self.real_board[m_row][m_col] = Cell.MINE
 
         # populate numbers
         for loc in self.locations:
