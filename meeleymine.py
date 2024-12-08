@@ -64,13 +64,13 @@ class Cell(Enum):
     UNOPENED = 11
     OPENED = 12
 
-    def display(self, stdscr: curses.window, symbols: {str: str},
+    def display(self, win: curses.window, symbols: {str: str},
                 display_format=None) -> None:
         if display_format:
-            stdscr.addstr(symbols[self.name], display_format)
+            win.addstr(symbols[self.name], display_format)
         else:
             color = curses.color_pair(int(self.value))
-            stdscr.addstr(symbols[self.name], color)
+            win.addstr(symbols[self.name], color)
 
     def print(self, symbols):
         return symbols[self.name]
@@ -111,7 +111,7 @@ class Board:
 
     def __init__(self, width: int, height: int, mine_ratio: float,
                  difficulty: Difficulty, config: dict,
-                 stdscr: curses.window) -> None:
+                 win: curses.window) -> None:
         self.width = width
         self.height = height
         self.locations = list(itertools.product(range(self.height),
@@ -129,7 +129,7 @@ class Board:
         self.hs_config = config['HIGHSCORES']
         self.symbols = config["LOOK"]["SYMBOLS"]
 
-        self.stdscr = stdscr
+        self.win = win
 
         self.start_time = None
         self.end_time = None
@@ -255,7 +255,7 @@ class Board:
             self.cursor = (self.height - 1, self.cursor[1])
 
     def update_highscores(self) -> bool:
-        term_width, term_height = self.stdscr.getmaxyx()
+        term_width, term_height = self.win.getmaxyx()
         if term_width > self.full_width:
             w = self.full_width
         else:
@@ -280,11 +280,11 @@ class Board:
 
             # Get player's name
             self.display()
-            self.stdscr.addstr(f'{"NEW HIGHSCORE!!!":^{w}}',
+            self.win.addstr(f'{"NEW HIGHSCORE!!!":^{w}}',
                                curses.A_BOLD
                                | curses.A_REVERSE
                                | curses.A_BLINK)
-            name = raw_input(self.stdscr, self.height + 7, 0,
+            name = raw_input(self.win, self.height + 7, 0,
                              prompt='Enter Name:')
             # remove invalid characters (white spaces and quotes)
             name = name.translate(str.maketrans('', '', ' \n\t\r\'"'))
@@ -404,38 +404,38 @@ class Board:
             max_scores = len(highscores)
         title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
         # clear the screen
-        self.stdscr.clear()
+        self.win.clear()
 
         max_name_length = len(max(highscores, key=lambda x: len(x[1]))[1])
 
         # title
         w = len(str(len(highscores))) + max_name_length + 22
-        self.stdscr.addstr(f'{f"{self.difficulty.name} HIGH SCORES":^{w}}\n',
+        self.win.addstr(f'{f"{self.difficulty.name} HIGH SCORES":^{w}}\n',
                            title_format)
 
         # list scores
         for idx, score in enumerate(highscores[:max_scores]):
-            self.stdscr.addstr(f'[')
+            self.win.addstr(f'[')
             # do cute color matching for numbers
             num = idx + 1
-            self.stdscr.addstr(str(num), curses.color_pair((idx % 8) + 1))
+            self.win.addstr(str(num), curses.color_pair((idx % 8) + 1))
             # add closing bracket with some spacing to make everything line up
             spaces = " " * (len(str(len(highscores))) - len(str(num)) + 2)
-            self.stdscr.addstr(f']{spaces}')
+            self.win.addstr(f']{spaces}')
 
             # if we are showing the highscores after someone got a new one
             # then we will do our best to highlight their new score
             if f'{Board.zero_time + self.score:%H:%M:%S.%f}' == score[2]:
-                self.stdscr.addstr(
+                self.win.addstr(
                     f'{score[1]:<{max_name_length}} | {score[2]}\n',
                     title_format)
             else:
-                self.stdscr.addstr(f'{score[1]:<{max_name_length}} |'
+                self.win.addstr(f'{score[1]:<{max_name_length}} |'
                                    f' {score[2]}\n')
-        self.stdscr.nodelay(False)
-        self.stdscr.refresh()
-        self.stdscr.getch()
-        self.stdscr.nodelay(True)
+        self.win.nodelay(False)
+        self.win.refresh()
+        self.win.getch()
+        self.win.nodelay(True)
         self.pause()
 
     def flag(self) -> None:
@@ -480,7 +480,7 @@ class Board:
                                                   'WIN'])
                           | curses.A_BOLD)
 
-        term_height, term_width = self.stdscr.getmaxyx()
+        term_height, term_width = self.win.getmaxyx()
         if term_width > self.full_width:
             # show timer next
             if self.start_time is not None and self.state == GameState.PLAYING:
@@ -494,7 +494,7 @@ class Board:
 
             title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
             time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-            self.stdscr.addstr(f'{time_str:^{self.full_width}}\n')
+            self.win.addstr(f'{time_str:^{self.full_width}}\n')
 
             # display board
             for rid, row in enumerate(self.my_board):
@@ -504,37 +504,37 @@ class Board:
                     # highlight cursor position
                     if self.cursor == (
                             rid, cid) and self.state == GameState.PLAYING:
-                        self.stdscr.addstr('[', selector_format)
-                        cell.display(self.stdscr, self.symbols)
-                        self.stdscr.addstr(']', selector_format)
+                        self.win.addstr('[', selector_format)
+                        cell.display(self.win, self.symbols)
+                        self.win.addstr(']', selector_format)
                         continue
                     # highlight death location
                     if self.death == (rid, cid) and self.state == GameState.LOST:
-                        self.stdscr.addstr('[', death_format)
-                        cell.display(self.stdscr, self.symbols)
-                        self.stdscr.addstr(']', death_format)
+                        self.win.addstr('[', death_format)
+                        cell.display(self.win, self.symbols)
+                        self.win.addstr(']', death_format)
                         continue
                     # flash all flags if won
                     if cell == Cell.FLAG and self.state == GameState.WON:
-                        self.stdscr.addstr('[', win_format)
-                        cell.display(self.stdscr, self.symbols, win_format)
-                        self.stdscr.addstr(']', win_format)
+                        self.win.addstr('[', win_format)
+                        cell.display(self.win, self.symbols, win_format)
+                        self.win.addstr(']', win_format)
                         continue
                     # otherwise normal cell display
-                    self.stdscr.addstr('[')
-                    cell.display(self.stdscr, self.symbols)
-                    self.stdscr.addstr(']')
-                self.stdscr.addstr('\n')
-            self.stdscr.addstr('\n')
+                    self.win.addstr('[')
+                    cell.display(self.win, self.symbols)
+                    self.win.addstr(']')
+                self.win.addstr('\n')
+            self.win.addstr('\n')
 
             reset_key = control_str(self.config["CONTROLS"]["RESET"])
             if self.state == GameState.LOST:
-                self.stdscr.addstr(f'{"YOU LOSE!":^{self.full_width}}\n', title_format)
-                self.stdscr.addstr(
+                self.win.addstr(f'{"YOU LOSE!":^{self.full_width}}\n', title_format)
+                self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
             elif self.state == GameState.WON:
-                self.stdscr.addstr(f'{"YOU WIN!":^{self.full_width}}\n', title_format)
-                self.stdscr.addstr(
+                self.win.addstr(f'{"YOU WIN!":^{self.full_width}}\n', title_format)
+                self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
         else:
             # show timer next
@@ -549,7 +549,7 @@ class Board:
 
             title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
             time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-            self.stdscr.addstr(f'{time_str:^{self.width}}\n')
+            self.win.addstr(f'{time_str:^{self.width}}\n')
 
             # display board
             for rid, row in enumerate(self.my_board):
@@ -559,36 +559,36 @@ class Board:
                     # highlight cursor position
                     if self.cursor == (
                             rid, cid) and self.state == GameState.PLAYING:
-                        cell.display(self.stdscr, self.symbols, curses.A_REVERSE)
+                        cell.display(self.win, self.symbols, curses.A_REVERSE)
                         continue
                     # highlight death location
                     if self.death == (
                     rid, cid) and self.state == GameState.LOST:
-                        cell.display(self.stdscr, self.symbols)
+                        cell.display(self.win, self.symbols)
                         continue
                     # flash all flags if won
                     if cell == Cell.FLAG and self.state == GameState.WON:
-                        cell.display(self.stdscr, self.symbols, win_format)
+                        cell.display(self.win, self.symbols, win_format)
                         continue
                     # otherwise normal cell display
-                    cell.display(self.stdscr, self.symbols)
-                self.stdscr.addstr('\n')
-            self.stdscr.addstr('\n')
+                    cell.display(self.win, self.symbols)
+                self.win.addstr('\n')
+            self.win.addstr('\n')
 
             reset_key = control_str(self.config["CONTROLS"]["RESET"])
             if self.state == GameState.LOST:
-                self.stdscr.addstr(f'{"YOU LOSE!":^{self.width}}\n',
+                self.win.addstr(f'{"YOU LOSE!":^{self.width}}\n',
                                    title_format)
-                self.stdscr.addstr(
+                self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.width}}\n')
             elif self.state == GameState.WON:
-                self.stdscr.addstr(f'{"YOU WIN!":^{self.width}}\n',
+                self.win.addstr(f'{"YOU WIN!":^{self.width}}\n',
                                    title_format)
-                self.stdscr.addstr(
+                self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.width}}\n')
 
 
-def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
+def init_colors(win: curses.window, colors: {str: dict}) -> None:
     str_to_id = Board.str_to_id
     defaults: {str, int} = colors['DEFAULT']
     rgbs: {str: [int]} = colors['RGB']
@@ -628,7 +628,7 @@ def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
                 bg = defaults['BG']
                 fg = defaults['FG']
             curses.init_pair(str_to_id['BG'], fg, bg)
-            stdscr.bkgd(' ', curses.color_pair(str_to_id['BG']))
+            win.bkgd(' ', curses.color_pair(str_to_id['BG']))
 
             for idx, (c_n, c_v) in enumerate(rgbs.items()):
                 if c_n == 'BG' or c_n == 'FG':
@@ -645,7 +645,7 @@ def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
             bg = defaults['BG']
             curses.init_pair(str_to_id['BG'], defaults['FG'],
                              defaults['BG'])
-            stdscr.bkgd(' ', curses.color_pair(str_to_id['BG']))
+            win.bkgd(' ', curses.color_pair(str_to_id['BG']))
             for idx, (c_n, c_v) in enumerate(defaults.items()):
                 if c_n == 'BG' or c_n == 'FG':
                     continue
@@ -656,7 +656,7 @@ class _Sentinel:
     pass
 
 
-def setup(stdscr: curses.window) -> None:
+def setup(win: curses.window) -> None:
     # loading config
     config = load_config.load_config()
     load_highscore.generate_dummy_if_needed()
@@ -710,9 +710,9 @@ def setup(stdscr: curses.window) -> None:
             f'Invalid mine ratio: {args.ratio:.2f}. Must be between 0 and 1')
     config["SETUP"]["NO_FLASH"] = args.no_flash
 
-    init_colors(stdscr, config["LOOK"]['COLORS'])
+    init_colors(win, config["LOOK"]['COLORS'])
     curses.mousemask(curses.ALL_MOUSE_EVENTS)
-    stdscr.nodelay(True)
+    win.nodelay(True)
     try:
         curses.curs_set(0)
     except curses.error:
@@ -725,26 +725,26 @@ def setup(stdscr: curses.window) -> None:
             args.ratio = math.sqrt(args.width * args.height) / (
                     args.width * args.height)
         board = Board(args.width, args.height, args.ratio, Difficulty.CUSTOM,
-                      config, stdscr)
-        main_loop(stdscr, board, config)
+                      config, win)
+        main_loop(win, board, config)
     else:
-        splash(stdscr, config)
+        splash(win, config)
 
 
 # use curses to prompt the user for a response
 # https://stackoverflow.com/a/21785167
-def raw_input(stdscr: curses.window, r: int, c: int, prompt: str) -> str:
+def raw_input(win: curses.window, r: int, c: int, prompt: str) -> str:
     curses.echo()
-    stdscr.nodelay(False)
-    stdscr.addstr(r, c, prompt)
-    stdscr.refresh()
-    inp = stdscr.getstr(r + 1, c, 20)
-    stdscr.nodelay(True)
+    win.nodelay(False)
+    win.addstr(r, c, prompt)
+    win.refresh()
+    inp = win.getstr(r + 1, c, 20)
+    win.nodelay(True)
     return inp.decode()  # ^^^^  reading input at next line
 
 
-def logo(stdscr: curses.window) -> None:
-    term_height, term_width = stdscr.getmaxyx()
+def logo(win: curses.window) -> None:
+    term_height, term_width = win.getmaxyx()
     options: [str] = [
         # formatter:off
         (f'\n'
@@ -808,7 +808,7 @@ def logo(stdscr: curses.window) -> None:
         longest_line = max(op.split('\n'), key=len)
         if term_width > len(longest_line):
             for row in op:
-                stdscr.addstr(row)
+                win.addstr(row)
             return
 
 
@@ -832,19 +832,19 @@ def control_str(configs: [str]) -> str:
     return out
 
 
-def show_help(stdscr: curses.window, config: dict) -> None:
+def show_help(win: curses.window, config: dict) -> None:
     controls = config["CONTROLS"]
-    stdscr.clear()
-    stdscr.addstr('HELP\n\n')
+    win.clear()
+    win.addstr('HELP\n\n')
     longest_cmd = max(controls.keys(), key=len)
     for command in controls.keys():
-        stdscr.addstr(
+        win.addstr(
             f'{command + ":":<{1 + len(longest_cmd)}} '
             f'{control_str(controls.get(command))}\n')
 
 
-def display_sample(stdscr: curses.window, config: dict) -> None:
-    term_height, term_width = stdscr.getmaxyx()
+def display_sample(win: curses.window, config: dict) -> None:
+    term_height, term_width = win.getmaxyx()
     symbols = config["LOOK"]["SYMBOLS"]
     display = [[Cell.UNOPENED, Cell.FLAG, Cell.MINE, Cell.BLANK],
                [Cell.ONE, Cell.TWO, Cell.THREE, Cell.FOUR],
@@ -859,10 +859,10 @@ def display_sample(stdscr: curses.window, config: dict) -> None:
     if term_width > len(max(out1.split('\n'), key=len)):
         for row in display:
             for cell in row:
-                stdscr.addstr('[')
-                cell.display(stdscr, symbols)
-                stdscr.addstr(']')
-            stdscr.addstr('\n')
+                win.addstr('[')
+                cell.display(win, symbols)
+                win.addstr(']')
+            win.addstr('\n')
         return
     out2 = ''
     for row in display:
@@ -872,13 +872,13 @@ def display_sample(stdscr: curses.window, config: dict) -> None:
     if term_width > len(max(out2.split('\n'), key=len)):
         for row in display:
             for cell in row:
-                cell.display(stdscr, symbols)
-            stdscr.addstr('\n')
+                cell.display(win, symbols)
+            win.addstr('\n')
         return
     return
 
 
-def splash(stdscr: curses.window, config: dict) -> None:
+def splash(win: curses.window, config: dict) -> None:
     beginner_width = config["SETUP"]["BEGINNER"]["WIDTH"]
     beginner_height = config["SETUP"]["BEGINNER"]["HEIGHT"]
     beginner_ratio = config["SETUP"]["BEGINNER"]["RATIO"]
@@ -897,11 +897,11 @@ def splash(stdscr: curses.window, config: dict) -> None:
         total_list.append([x for x in raw_highscore_data
                            if x[0] == difficulty.name])
 
-    stdscr.clear()
-    logo(stdscr)
+    win.clear()
+    logo(win)
 
     def show_option(d: Difficulty) -> None:
-        term_height, term_width = stdscr.getmaxyx()
+        term_height, term_width = win.getmaxyx()
         longest_d = max(Difficulty, key=lambda x: len(x.name))
         spaces = len(longest_d.name)
         if len(total_list[d.value]) > 0:
@@ -948,69 +948,69 @@ def splash(stdscr: curses.window, config: dict) -> None:
                 continue
             if term_width >= len(op) + 2:
                 if has_hs and len(total_list[d.value]) > 0:
-                    stdscr.addstr(op)
+                    win.addstr(op)
                     return
                 elif not has_hs:
-                    stdscr.addstr(op)
+                    win.addstr(op)
                     return
                 else:
                     continue
 
     # DISPLAY OPTIONS
     for diff in Difficulty:
-        stdscr.addstr(f'[')
-        stdscr.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1)%8))
+        win.addstr(f'[')
+        win.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1)%8))
         show_option(diff)
-    stdscr.addstr('\n')
-    stdscr.addstr(f'[')
-    exit_spot = stdscr.getyx()
-    stdscr.addstr(f'5', curses.color_pair((len(
+    win.addstr('\n')
+    win.addstr(f'[')
+    exit_spot = win.getyx()
+    win.addstr(f'5', curses.color_pair((len(
         Difficulty) + 1)%8))
-    stdscr.addstr(f'] Exit\n\n')
+    win.addstr(f'] Exit\n\n')
 
     # DISPLAY all symbols (useful if changing themes:)
-    display_sample(stdscr, config)
+    display_sample(win, config)
 
-    stdscr.refresh()
+    win.refresh()
 
     # Handle user interaction (selecting difficulty)
     # TODO: allow selection with movement keys and reveal keys
     while True:
         try:
-            key = stdscr.getkey(0, 0)
+            key = win.getkey(0, 0)
         except curses.error:
             key = curses.ERR
         if key in config["CONTROLS"].get("EXIT"):
             raise SystemExit(0)
         if key == 'KEY_RESIZE':
-            stdscr.clear()
-            logo(stdscr)
+            win.clear()
+            logo(win)
 
             # DISPLAY OPTIONS
             for diff in Difficulty:
-                stdscr.addstr(f'[')
-                stdscr.addstr(f'{diff.value + 1}',
+                win.addstr(f'[')
+                win.addstr(f'{diff.value + 1}',
                               curses.color_pair((diff.value+1)%8))
                 show_option(diff)
-            stdscr.addstr('\n')
+            win.addstr('\n')
 
             # DISPLAY all symbols (useful if changing themes:)
-            display_sample(stdscr, config)
-            stdscr.refresh()
+            display_sample(win, config)
+            win.refresh()
         if key == '1':
             board = Board(int(beginner_width), int(beginner_height),
                           float(beginner_ratio), Difficulty.BEGINNER,
-                          config, stdscr)
+                          config, win)
             break
         elif key == '2':
             board = Board(int(intermediate_width), int(intermediate_height),
                           float(intermediate_ratio), Difficulty.INTERMEDIATE,
-                          config, stdscr)
+                          config, win)
             break
         elif key == '3':
             board = Board(int(expert_width), int(expert_height),
                           float(expert_ratio), Difficulty.EXPERT,
-                          config, stdscr)
+                          config, win)
             break
         elif key == '4':
             # TODO: these need to be moved down according to the height of the
@@ -1022,9 +1022,9 @@ def splash(stdscr: curses.window, config: dict) -> None:
             # get width from user
             custom_width = ''
             while not custom_width.isdigit():
-                stdscr.clear()
-                logo(stdscr)
-                custom_width = raw_input(stdscr, 7, 0,
+                win.clear()
+                logo(win)
+                custom_width = raw_input(win, 7, 0,
                                          f"width (min: {min_width}, "
                                          f"max: {max_width}): ").lower()
                 if custom_width.isdigit():
@@ -1037,10 +1037,10 @@ def splash(stdscr: curses.window, config: dict) -> None:
             # get height from user
             custom_height = ''
             while not custom_height.isdigit():
-                stdscr.clear()
-                logo(stdscr)
-                stdscr.addstr(f'width: {custom_width}')
-                custom_height = raw_input(stdscr, 8, 0,
+                win.clear()
+                logo(win)
+                win.addstr(f'width: {custom_width}')
+                custom_height = raw_input(win, 8, 0,
                                           f"height (min: {min_height}, "
                                           f"max: {max_height}): ").lower()
                 if custom_height.isdigit():
@@ -1053,11 +1053,11 @@ def splash(stdscr: curses.window, config: dict) -> None:
             # get ratio from user
             custom_ratio = ''
             while not custom_ratio.replace('.', '', 1).isdigit():
-                stdscr.clear()
-                logo(stdscr)
-                stdscr.addstr(f'width: {custom_width}\n')
-                stdscr.addstr(f'height: {custom_height}')
-                custom_ratio = raw_input(stdscr, 9, 0, "ratio: ").lower()
+                win.clear()
+                logo(win)
+                win.addstr(f'width: {custom_width}\n')
+                win.addstr(f'height: {custom_height}')
+                custom_ratio = raw_input(win, 9, 0, "ratio: ").lower()
                 if custom_ratio.replace('.', '', 1).isdigit():
                     if float(custom_ratio) > 1 or float(custom_ratio) < 0:
                         custom_ratio = 'NaN'
@@ -1065,13 +1065,13 @@ def splash(stdscr: curses.window, config: dict) -> None:
                     custom_ratio = str(config["SETUP"]["BEGINNER"]["RATIO"])
             board = Board(int(custom_width), int(custom_height),
                           float(custom_ratio), Difficulty.CUSTOM,
-                          config, stdscr)
+                          config, win)
             break
         elif key == '5':
             if not config['SETUP']['NO_FLASH']:
-                stdscr.addstr(exit_spot[0], exit_spot[1], config['LOOK'][
+                win.addstr(exit_spot[0], exit_spot[1], config['LOOK'][
                     'SYMBOLS']['MINE'])
-                stdscr.refresh()
+                win.refresh()
                 curses.flash()
                 time.sleep(0.1)
                 curses.flash()
@@ -1079,33 +1079,33 @@ def splash(stdscr: curses.window, config: dict) -> None:
             raise SystemExit(0)
 
     curses.noecho()
-    main_loop(stdscr, board, config)
+    main_loop(win, board, config)
 
 
-def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
-    term_height, term_width = stdscr.getmaxyx()
+def main_loop(win: curses.window, board: Board, config: dict) -> None:
+    term_height, term_width = win.getmaxyx()
     controls = config["CONTROLS"]
     help_str = control_str(controls.get("HELP"))
     # show board
-    stdscr.clear()
+    win.clear()
     board.display()
-    stdscr.refresh()
+    win.refresh()
 
     # handle user input
     while True:
         try:
-            key = stdscr.getkey(0, 0)
+            key = win.getkey(0, 0)
         except curses.error:
             key = curses.ERR
         if key in controls.get("EXIT"):
             break
         elif key in controls.get("HELP"):
             board.pause()
-            show_help(stdscr, config)
+            show_help(win, config)
         elif key in controls.get("HIGHSCORES"):
             board.show_highscores()
         elif key in controls.get("MENU"):
-            splash(stdscr, config)
+            splash(win, config)
             break
         elif key in controls.get("REVEAL"):
             board.reveal()
@@ -1136,11 +1136,11 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
                 break
             elif mouse_helper(controls, 'HELP', bstate):
                 board.pause()
-                show_help(stdscr, config)
+                show_help(win, config)
             elif mouse_helper(controls, 'HIGHSCORES', bstate):
                 board.show_highscores()
             elif mouse_helper(controls, 'MENU', bstate):
-                splash(stdscr, config)
+                splash(win, config)
                 break
             elif mouse_helper(controls, 'REVEAL', bstate):
                 if board.set_cursor_from_mouse(mx, my):
@@ -1163,20 +1163,20 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
             if board.state != GameState.PAUSED:
                 board.display()
                 if term_width > board.full_width:
-                    stdscr.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
+                    win.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
                 else:
-                    stdscr.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
-                stdscr.noutrefresh()
-                stdscr.refresh()
+                    win.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
+                win.noutrefresh()
+                win.refresh()
             continue
         if board.state != GameState.PAUSED:
-            stdscr.clear()
+            win.clear()
             board.display()
             if term_width > board.full_width:
-                stdscr.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
+                win.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
             else:
-                stdscr.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
-        stdscr.refresh()
+                win.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
+        win.refresh()
 
     raise SystemExit(0)
 
