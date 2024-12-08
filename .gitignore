@@ -2,4 +2,5 @@
 scrap*
 config_template.yaml
 config.yaml
+highscores.csv
 game_history.txt
