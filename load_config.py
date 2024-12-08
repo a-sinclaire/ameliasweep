@@ -9,7 +9,6 @@ config_path = 'config.yaml'
 
 
 def load_config() -> dict:
-    # TODO: figure out canonical location for config file
     try:
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)

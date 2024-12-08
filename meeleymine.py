@@ -14,7 +14,6 @@ import load_highscore
 
 
 # TODO:
-# put config in canonical location
 
 # revert back to normal terminal colors on exit
 

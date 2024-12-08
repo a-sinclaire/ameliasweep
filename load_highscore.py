@@ -7,7 +7,6 @@ from typing import Any
 # type Any used instead of Difficulty
 # not correct, but I wanted to avoid circular import here
 
-# TODO: put in better location
 highscore_filepath = 'highscores.csv'
 
 
