@@ -1,12 +1,10 @@
 # Amelia Sinclaire 2024
 import argparse
-import csv
 import curses
 import datetime
 from enum import Enum
 import itertools
 import math
-import operator
 import random
 import time
 from typing import Any, List
@@ -20,7 +18,6 @@ import load_highscore
 
 # put config in canonical location
 
-# resize entire game (if possible) based on terminal size
 # revert back to normal terminal colors on exit
 
 # make script to test mouse buttons, like done for keyboard in readme.
@@ -73,8 +70,6 @@ class Cell(Enum):
         else:
             color = curses.color_pair(int(self.value))
             stdscr.addstr(symbols[self.name], color)
-        # else:
-        #     stdscr.addstr(symbols[self.name])
 
     def print(self, symbols):
         return symbols[self.name]
@@ -120,7 +115,7 @@ class Board:
         self.height = height
         self.locations = list(itertools.product(range(self.height),
                                                 range(self.width)))
-        self.middle = self.width * 3
+        self.full_width = self.width * 3
 
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
@@ -259,6 +254,11 @@ class Board:
             self.cursor = (self.height - 1, self.cursor[1])
 
     def update_highscores(self) -> bool:
+        term_width, term_height = self.stdscr.getmaxyx()
+        if term_width > self.full_width:
+            w = self.full_width
+        else:
+            w = self.width
         raw_highscore_data: [[str, str, str]] = []
         new_highscore = False
 
@@ -279,7 +279,7 @@ class Board:
 
             # Get player's name
             self.display()
-            self.stdscr.addstr(f'{"NEW HIGHSCORE!!!":^{self.middle}}',
+            self.stdscr.addstr(f'{"NEW HIGHSCORE!!!":^{w}}',
                                curses.A_BOLD
                                | curses.A_REVERSE
                                | curses.A_BLINK)
@@ -405,13 +405,14 @@ class Board:
         # clear the screen
         self.stdscr.clear()
 
+        max_name_length = len(max(highscores, key=lambda x: len(x[1]))[1])
+
         # title
-        # TODO: center this text based on the width of the highscore screen
-        self.stdscr.addstr(f'{f"{self.difficulty.name} HIGH SCORES":^{self.middle}}\n',
+        w = len(str(len(highscores))) + max_name_length + 22
+        self.stdscr.addstr(f'{f"{self.difficulty.name} HIGH SCORES":^{w}}\n',
                            title_format)
 
         # list scores
-        max_name_length = len(max(highscores, key=lambda x: len(x[1]))[1])
         for idx, score in enumerate(highscores[:max_scores]):
             self.stdscr.addstr(f'[')
             # do cute color matching for numbers
@@ -478,60 +479,112 @@ class Board:
                                                   'WIN'])
                           | curses.A_BOLD)
 
-        # show timer next
-        if self.start_time is not None and self.state == GameState.PLAYING:
-            _time = Board.zero_time + self.cum_time + (
-                    datetime.datetime.now() - self.start_time)
-        elif self.state == GameState.WON or self.state == GameState.LOST:
-            _time = Board.zero_time + self.cum_time + (
-                    self.end_time - self.start_time)
-        else:
-            _time = Board.zero_time + self.cum_time
+        term_height, term_width = self.stdscr.getmaxyx()
+        if term_width > self.full_width:
+            # show timer next
+            if self.start_time is not None and self.state == GameState.PLAYING:
+                _time = Board.zero_time + self.cum_time + (
+                        datetime.datetime.now() - self.start_time)
+            elif self.state == GameState.WON or self.state == GameState.LOST:
+                _time = Board.zero_time + self.cum_time + (
+                        self.end_time - self.start_time)
+            else:
+                _time = Board.zero_time + self.cum_time
 
-        title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
-        time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-        self.stdscr.addstr(f'{time_str:^{self.middle}}\n')
+            title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
+            time_str = f'{_time:%H:%M:%S.%f}'[:-4]
+            self.stdscr.addstr(f'{time_str:^{self.full_width}}\n')
 
-        # display board
-        for rid, row in enumerate(self.my_board):
-            for cid, cell in enumerate(row):
-                if cell == Cell.OPENED:
-                    cell = self.real_board[rid][cid]
-                # highlight cursor position
-                if self.cursor == (
-                        rid, cid) and self.state == GameState.PLAYING:
-                    self.stdscr.addstr('[', selector_format)
+            # display board
+            for rid, row in enumerate(self.my_board):
+                for cid, cell in enumerate(row):
+                    if cell == Cell.OPENED:
+                        cell = self.real_board[rid][cid]
+                    # highlight cursor position
+                    if self.cursor == (
+                            rid, cid) and self.state == GameState.PLAYING:
+                        self.stdscr.addstr('[', selector_format)
+                        cell.display(self.stdscr, self.symbols)
+                        self.stdscr.addstr(']', selector_format)
+                        continue
+                    # highlight death location
+                    if self.death == (rid, cid) and self.state == GameState.LOST:
+                        self.stdscr.addstr('[', death_format)
+                        cell.display(self.stdscr, self.symbols)
+                        self.stdscr.addstr(']', death_format)
+                        continue
+                    # flash all flags if won
+                    if cell == Cell.FLAG and self.state == GameState.WON:
+                        self.stdscr.addstr('[', win_format)
+                        cell.display(self.stdscr, self.symbols, win_format)
+                        self.stdscr.addstr(']', win_format)
+                        continue
+                    # otherwise normal cell display
+                    self.stdscr.addstr('[')
                     cell.display(self.stdscr, self.symbols)
-                    self.stdscr.addstr(']', selector_format)
-                    continue
-                # highlight death location
-                if self.death == (rid, cid) and self.state == GameState.LOST:
-                    self.stdscr.addstr('[', death_format)
-                    cell.display(self.stdscr, self.symbols)
-                    self.stdscr.addstr(']', death_format)
-                    continue
-                # flash all flags if won
-                if cell == Cell.FLAG and self.state == GameState.WON:
-                    self.stdscr.addstr('[', win_format)
-                    cell.display(self.stdscr, self.symbols, win_format)
-                    self.stdscr.addstr(']', win_format)
-                    continue
-                # otherwise normal cell display
-                self.stdscr.addstr('[')
-                cell.display(self.stdscr, self.symbols)
-                self.stdscr.addstr(']')
+                    self.stdscr.addstr(']')
+                self.stdscr.addstr('\n')
             self.stdscr.addstr('\n')
-        self.stdscr.addstr('\n')
 
-        reset_key = control_str(self.config["CONTROLS"]["RESET"])
-        if self.state == GameState.LOST:
-            self.stdscr.addstr(f'{"YOU LOSE!":^{self.middle}}\n', title_format)
-            self.stdscr.addstr(
-                f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
-        elif self.state == GameState.WON:
-            self.stdscr.addstr(f'{"YOU WIN!":^{self.middle}}\n', title_format)
-            self.stdscr.addstr(
-                f'{f"Press {reset_key} to reset.":^{self.middle}}\n')
+            reset_key = control_str(self.config["CONTROLS"]["RESET"])
+            if self.state == GameState.LOST:
+                self.stdscr.addstr(f'{"YOU LOSE!":^{self.full_width}}\n', title_format)
+                self.stdscr.addstr(
+                    f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
+            elif self.state == GameState.WON:
+                self.stdscr.addstr(f'{"YOU WIN!":^{self.full_width}}\n', title_format)
+                self.stdscr.addstr(
+                    f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
+        else:
+            # show timer next
+            if self.start_time is not None and self.state == GameState.PLAYING:
+                _time = Board.zero_time + self.cum_time + (
+                        datetime.datetime.now() - self.start_time)
+            elif self.state == GameState.WON or self.state == GameState.LOST:
+                _time = Board.zero_time + self.cum_time + (
+                        self.end_time - self.start_time)
+            else:
+                _time = Board.zero_time + self.cum_time
+
+            title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
+            time_str = f'{_time:%H:%M:%S.%f}'[:-4]
+            self.stdscr.addstr(f'{time_str:^{self.width}}\n')
+
+            # display board
+            for rid, row in enumerate(self.my_board):
+                for cid, cell in enumerate(row):
+                    if cell == Cell.OPENED:
+                        cell = self.real_board[rid][cid]
+                    # highlight cursor position
+                    if self.cursor == (
+                            rid, cid) and self.state == GameState.PLAYING:
+                        cell.display(self.stdscr, self.symbols, curses.A_REVERSE)
+                        continue
+                    # highlight death location
+                    if self.death == (
+                    rid, cid) and self.state == GameState.LOST:
+                        cell.display(self.stdscr, self.symbols)
+                        continue
+                    # flash all flags if won
+                    if cell == Cell.FLAG and self.state == GameState.WON:
+                        cell.display(self.stdscr, self.symbols, win_format)
+                        continue
+                    # otherwise normal cell display
+                    cell.display(self.stdscr, self.symbols)
+                self.stdscr.addstr('\n')
+            self.stdscr.addstr('\n')
+
+            reset_key = control_str(self.config["CONTROLS"]["RESET"])
+            if self.state == GameState.LOST:
+                self.stdscr.addstr(f'{"YOU LOSE!":^{self.width}}\n',
+                                   title_format)
+                self.stdscr.addstr(
+                    f'{f"Press {reset_key} to reset.":^{self.width}}\n')
+            elif self.state == GameState.WON:
+                self.stdscr.addstr(f'{"YOU WIN!":^{self.width}}\n',
+                                   title_format)
+                self.stdscr.addstr(
+                    f'{f"Press {reset_key} to reset.":^{self.width}}\n')
 
 
 def init_colors(stdscr: curses.window, colors: {str: dict}) -> None:
@@ -1025,6 +1078,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
 
 
 def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
+    term_height, term_width = stdscr.getmaxyx()
     controls = config["CONTROLS"]
     help_str = control_str(controls.get("HELP"))
     # show board
@@ -1103,14 +1157,20 @@ def main_loop(stdscr: curses.window, board: Board, config: dict) -> None:
         elif key == curses.ERR:
             if board.state != GameState.PAUSED:
                 board.display()
-                stdscr.addstr(f'{f"Press {help_str} for help.":^{board.middle}}')
+                if term_width > board.full_width:
+                    stdscr.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
+                else:
+                    stdscr.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
                 stdscr.noutrefresh()
                 stdscr.refresh()
             continue
         if board.state != GameState.PAUSED:
             stdscr.clear()
             board.display()
-            stdscr.addstr(f'{f"Press {help_str} for help.":^{board.middle}}')
+            if term_width > board.full_width:
+                stdscr.addstr(f'{f"Press {help_str} for help.":^{board.full_width}}')
+            else:
+                stdscr.addstr(f'{f"Press {help_str} for help.":^{board.width}}')
         stdscr.refresh()
 
     raise SystemExit(0)
