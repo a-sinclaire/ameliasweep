@@ -105,19 +105,20 @@ def default_config() -> dict:
                                             'SELECTOR': 3,
                                             'LOSE': 1,
                                             'WIN': 2},
-                                'RGB': {'BG': [749, 749, 749],
-                                        'FG': [0, 0, 0],
-                                        'ONE': [0, 0, 1000],
-                                        'TWO': [0, 500, 0],
-                                        'THREE': [1000, 0, 0],
-                                        'FOUR': [0, 0, 500],
-                                        'FIVE': [500, 0, 0],
-                                        'SIX': [0, 500, 500],
-                                        'SEVEN': [0, 0, 0],
-                                        'EIGHT': [500, 500, 500],
-                                        'SELECTOR': [1000, 1000, 0],
-                                        'LOSE': [1000, 0, 0],
-                                        'WIN': [0, 1000, 0]}}}}
+                                # https://lospec.com/palette-list/sweetie-16
+                                'RGB': {'BG': '#1a1c2c',
+                                        'FG': '#f4f4f4',
+                                        'ONE': '#41a6f6 ',
+                                        'TWO': '#38b764',
+                                        'THREE': '#b13e53',
+                                        'FOUR': '#3b5dc9',
+                                        'FIVE': '#5d275d',
+                                        'SIX': '#257179',
+                                        'SEVEN': '#566c86',
+                                        'EIGHT': '#94b0c2',
+                                        'SELECTOR': '#ffcd75',
+                                        'LOSE': '#b13e53',
+                                        'WIN': '#a7f070'}}}}
 
 
 def initialize_structure(config: dict) -> dict:
