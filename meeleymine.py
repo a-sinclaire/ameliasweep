@@ -15,7 +15,6 @@ import load_config
 
 
 # TODO:
-# change default colors
 # allow editing all symbol colors (flag and mine and unopened)
 # seeded runs
 
@@ -30,6 +29,7 @@ import load_config
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
+# look at the other to-dos in the files
 
 
 class Difficulty(Enum):
@@ -943,6 +943,7 @@ def splash(stdscr: curses.window, config: dict) -> None:
         show_option(diff)
     stdscr.addstr('\n')
     stdscr.addstr(f'[')
+    exit_spot = stdscr.getyx()
     stdscr.addstr(f'5', curses.color_pair(len(
         Difficulty) + 1))
     stdscr.addstr(f'] Exit\n\n')
@@ -1047,6 +1048,14 @@ def splash(stdscr: curses.window, config: dict) -> None:
                           config, stdscr)
             break
         elif key == '5':
+            if not config['SETUP']['NO_FLASH']:
+                stdscr.addstr(exit_spot[0], exit_spot[1], config['LOOK'][
+                    'SYMBOLS']['MINE'])
+                stdscr.refresh()
+                curses.flash()
+                time.sleep(0.1)
+                curses.flash()
+                curses.flash()
             raise SystemExit(0)
 
     curses.noecho()
