@@ -24,6 +24,7 @@ def load_config() -> dict:
     type_check_values(config)
     value_check_values(config)
     config = replace_hex(config)
+    config = put_controls_in_list(config)
     return fill_uninitialized_values(config)
 
 
@@ -243,9 +244,9 @@ def type_check_values(config: dict):
     for k_n, k_v in config['CONTROLS'].items():
         if k_v is None:
             continue
-        if not isinstance(k_v, list):
+        if not isinstance(k_v, list) and not isinstance(k_v, str):
             raise TypeError(f'Config for CONTROLS:{k_n}'
-                            f' must be of type list.')
+                            f' must be of type list or str.')
         else:
             for idx, i in enumerate(config['CONTROLS'][k_n]):
                 if i is None:
@@ -472,6 +473,13 @@ def hex_to_list(hex_color: str) -> [int]:
     lv = len(h)
     t = [int(h[i:i + lv // 3], 16) for i in range(0, lv, lv // 3)]
     return [(1000 * i) // 255 for i in t]
+
+
+def put_controls_in_list(config: dict) -> dict:
+    for k_n, k_v in config['CONTROLS'].items():
+        if isinstance(k_v, str):
+            config['CONTROLS'][k_n] = [k_v]
+    return config
 
 
 if __name__ == '__main__':
