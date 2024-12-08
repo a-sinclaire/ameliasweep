@@ -14,15 +14,14 @@ import load_highscore
 
 
 # TODO:
-
-# revert back to normal terminal colors on exit
-
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
 # look at the other to-dos in the files
 
 # should I display number of mines?
+# revert back to normal terminal colors on exit (wait for bug to be reproduced)
+# bug: dont resize terminal while inputting custom settings
 
 # Stretch Goals:
 # in game settings / config editor
@@ -1014,8 +1013,6 @@ def splash(win: curses.window, config: dict) -> None:
                           config, win)
             break
         elif key == '4':
-            # TODO: these need to be moved down according to the height of the
-            # logo... maybe can get current cursor position or something?
             min_width = config["SETUP"]['MIN_WIDTH']
             min_height = config["SETUP"]['MIN_HEIGHT']
             max_width = config["SETUP"]['MAX_WIDTH']
@@ -1025,7 +1022,8 @@ def splash(win: curses.window, config: dict) -> None:
             while not custom_width.isdigit():
                 win.clear()
                 logo(win)
-                custom_width = raw_input(win, 7, 0,
+                y, x = win.getyx()
+                custom_width = raw_input(win, y, 0,
                                          f"width (min: {min_width}, "
                                          f"max: {max_width}): ").lower()
                 if custom_width.isdigit():
@@ -1041,7 +1039,8 @@ def splash(win: curses.window, config: dict) -> None:
                 win.clear()
                 logo(win)
                 win.addstr(f'width: {custom_width}')
-                custom_height = raw_input(win, 8, 0,
+                y, x = win.getyx()
+                custom_height = raw_input(win, y+1, 0,
                                           f"height (min: {min_height}, "
                                           f"max: {max_height}): ").lower()
                 if custom_height.isdigit():
@@ -1058,7 +1057,8 @@ def splash(win: curses.window, config: dict) -> None:
                 logo(win)
                 win.addstr(f'width: {custom_width}\n')
                 win.addstr(f'height: {custom_height}')
-                custom_ratio = raw_input(win, 9, 0, "ratio: ").lower()
+                y, x = win.getyx()
+                custom_ratio = raw_input(win, y+1, 0, "ratio: ").lower()
                 if custom_ratio.replace('.', '', 1).isdigit():
                     if float(custom_ratio) > 1 or float(custom_ratio) < 0:
                         custom_ratio = 'NaN'
