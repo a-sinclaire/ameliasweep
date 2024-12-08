@@ -787,7 +787,7 @@ def control_str(configs: [str]) -> str:
             c = 'SPACE'
         if c == '\n':
             c = 'ENTER'
-        if c == '':
+        if out == '':
             out += f'[{c.upper()}]'
         else:
             out += f' OR [{c.upper()}]'
