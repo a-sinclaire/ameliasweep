@@ -2,10 +2,10 @@ import csv
 import datetime
 import math
 import operator
-from typing import Any, TypeAlias
+from typing import Any
 
-# not correct but i wanted to avoid circular import here
-Difficulty: TypeAlias = Any
+# type Any used instead of Difficulty
+# not correct, but I wanted to avoid circular import here
 
 # TODO: put in better location
 highscore_filepath = 'highscores.csv'
@@ -26,14 +26,14 @@ def load_raw_highscores() -> [[str, str, str]]:
     return raw_highscore_data
 
 
-def load_real_highscores() -> [[Difficulty, str, datetime.timedelta]]:
+def load_real_highscores() -> [[Any, str, datetime.timedelta]]:
     raw_highscore_data = load_raw_highscores()
     return convert_raw_to_real(raw_highscore_data)
 
 
 def convert_raw_to_real(
         raw_highscore_data: [[str, str, str]]) \
-        -> [[Difficulty, str, datetime.timedelta]]:
+        -> [[Any, str, datetime.timedelta]]:
     # turn the score strings into timedelta objects
     # and turn the difficulty strings into Difficulty objects
     from meeleymine import Difficulty
@@ -51,7 +51,7 @@ def convert_raw_to_real(
 
 
 def convert_real_to_raw(
-        real_highscore_date: [[Difficulty, str, datetime.timedelta]]) \
+        real_highscore_date: [[Any, str, datetime.timedelta]]) \
         -> [[str, str, str]]:
     zero_time = datetime.datetime.today().replace(hour=0,
                                                   minute=0,
@@ -66,9 +66,9 @@ def convert_real_to_raw(
     return raw_highscore_data
 
 
-def get_scores_for_difficulty(highscore_data: [[Difficulty, str,
+def get_scores_for_difficulty(highscore_data: [[Any, str,
                                                 datetime.timedelta]],
-                              difficulty: Difficulty) -> [datetime.timedelta]:
+                              difficulty: Any) -> [datetime.timedelta]:
     # get only scores for the selected Difficulty level
     scores: [datetime.timedelta] = [x[2] for x in highscore_data
                                     if x[0] == difficulty.name]
@@ -76,14 +76,14 @@ def get_scores_for_difficulty(highscore_data: [[Difficulty, str,
     return scores
 
 
-def load_highscores_for_difficulty(difficulty: Difficulty) \
-        -> [Difficulty, str, datetime.timedelta]:
+def load_highscores_for_difficulty(difficulty: Any) \
+        -> [Any, str, datetime.timedelta]:
     return [x for x in load_real_highscores() if x[0].value == difficulty.value]
 
 
 def add_and_save_scores(
-        highscore_data: [[Difficulty, str, datetime.timedelta]],
-        difficulty: Difficulty,
+        highscore_data: [[Any, str, datetime.timedelta]],
+        difficulty: Any,
         name: str,
         score: datetime.timedelta,
         max_scores: int) -> None:
