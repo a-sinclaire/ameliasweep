@@ -17,7 +17,6 @@ import load_config
 # TODO:
 # should i display number of mines?
 # highscore loader
-# replay system? at least recording.
 
 # put config in canonical location
 
@@ -126,6 +125,7 @@ class Board:
         self.mine_ratio = mine_ratio
         self.n_mines = round(self.width * self.height * self.mine_ratio)
         self.mines = []
+        self.moves = []
 
         self.difficulty = difficulty
         self.config = config
@@ -151,6 +151,7 @@ class Board:
 
     def reset(self) -> None:
         self.mines = []
+        self.moves = []
 
         self.start_time = None
         self.end_time = None
@@ -345,6 +346,18 @@ class Board:
                     writer.writerow('')
         return new_highscore
 
+    def write_game(self) -> None:
+        out = 'Mines:\n'
+        for m in self.mines:
+            out += f'{m}\n'
+        out += '\n'
+        out += 'Moves:\n'
+        for m in self.moves:
+            out += f'{m}\n'
+
+        with open('game_history.txt', 'w+') as f:
+            f.write(out)
+
     def won(self) -> None:
         self.state = GameState.WON
         self.end_time = datetime.datetime.now()
@@ -358,6 +371,9 @@ class Board:
             new_highscore = self.update_highscores()
             if new_highscore:
                 self.show_highscores()
+
+        # write out game:
+        self.write_game()
 
     def check_win(self) -> None:
         if self.state != GameState.PLAYING:
@@ -382,6 +398,9 @@ class Board:
             curses.flash()
             curses.flash()
 
+        # write out game:
+        self.write_game()
+
     def reveal(self) -> None:
         if not self.state == GameState.PLAYING:
             return
@@ -394,6 +413,9 @@ class Board:
             self.is_first_click = False
 
         row, col = self.cursor
+
+        if isinstance(self.cursor, tuple):
+            self.moves.append(self.cursor)
 
         if self.my_board[row][col] == Cell.OPENED:
             return
