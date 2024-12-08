@@ -17,13 +17,13 @@ import load_highscore
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
-# look at the other to-dos in the files
 
 # should I display number of mines?
 # revert back to normal terminal colors on exit (wait for bug to be reproduced)
 # bug: dont resize terminal while inputting custom settings
 
 # Stretch Goals:
+# make mouse work for menu selection
 # in game settings / config editor
 # let user define own game modes other than the 3 basics
 
@@ -924,24 +924,24 @@ def splash(win: curses.window, config: dict) -> None:
             h = -1
             r = -1
 
-        options.append((f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
+        options.append((f'{d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
                         f'| HS: {name} {score}\n', True, True, True))
-        options.append((f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
+        options.append((f'{d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
                         f'| HS: {score}\n', True, True, True))
-        options.append((f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
+        options.append((f'{d.name:<{spaces}} ({w}x{h}) | {r:.2%} '
                         f'| HS: {name}\n', True, True, True))
         options.append(
-            (f'] {d.name:<{spaces}} ({w}x{h}) | {r:.2%}\n', False, True, True))
+            (f'{d.name:<{spaces}} ({w}x{h}) | {r:.2%}\n', False, True, True))
         options.append(
-            (f'] {d.name:<{spaces}} ({w}x{h})\n', False, True, False))
+            (f'{d.name:<{spaces}} ({w}x{h})\n', False, True, False))
         options.append((f'] {d.name:<{spaces}} | HS: {name} {score}\n', True,
                         False, False))
         options.append(
-            (f'] {d.name:<{spaces}} | HS: {score}\n', True, False, False))
+            (f'{d.name:<{spaces}} | HS: {score}\n', True, False, False))
         options.append(
-            (f'] {d.name:<{spaces}} | HS: {name}\n', True, False, False))
-        options.append((f'] {d.name}\n', False, False, False))
-        options.append((f'] {d.name[0]}\n', False, False, False))
+            (f'{d.name:<{spaces}} | HS: {name}\n', True, False, False))
+        options.append((f'{d.name}\n', False, False, False))
+        options.append((f'{d.name[0]}\n', False, False, False))
 
         # options.sort(key=lambda x: len(x[0]), reverse=True)
 
@@ -960,17 +960,45 @@ def splash(win: curses.window, config: dict) -> None:
                 else:
                     continue
 
-    # DISPLAY OPTIONS
-    for diff in Difficulty:
-        win.addstr(f'[')
-        win.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1) % 8))
-        show_option(diff)
-    win.addstr('\n')
-    win.addstr(f'[')
-    exit_spot = win.getyx()
-    win.addstr(f'5', curses.color_pair((len(
-        Difficulty) + 1) % 8))
-    win.addstr(f'] Exit\n\n')
+    if curses.has_colors():
+        selector = (curses.A_BLINK
+                    | curses.color_pair(Board.str_to_id['SELECTOR'])
+                    | curses.A_BOLD)
+    else:
+        selector = (curses.A_REVERSE
+                    | curses.color_pair(Board.str_to_id['SELECTOR'])
+                    | curses.A_BOLD)
+
+    menu_cursor = 0
+
+    def display_options() -> [int, int]:
+        # DISPLAY OPTIONS
+        for diff in Difficulty:
+            if diff.value == menu_cursor:
+                win.addstr(f'[', selector)
+            else:
+                win.addstr(f'[')
+            win.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1) % 8))
+            if diff.value == menu_cursor:
+                win.addstr(f'] ', selector)
+            else:
+                win.addstr(f'] ')
+            show_option(diff)
+        win.addstr('\n')
+        if menu_cursor == 4:
+            win.addstr(f'[', selector)
+        else:
+            win.addstr(f'[')
+        exit_spot = win.getyx()
+        win.addstr(f'5', curses.color_pair((len(
+            Difficulty) + 1) % 8))
+        if menu_cursor == 4:
+            win.addstr(f'] ', selector)
+        else:
+            win.addstr(f'] ')
+        win.addstr(f'Exit\n\n')
+        return exit_spot
+    exit_spot = display_options()
 
     # DISPLAY all symbols (useful if changing themes:)
     display_sample(win, config)
@@ -978,7 +1006,6 @@ def splash(win: curses.window, config: dict) -> None:
     win.refresh()
 
     # Handle user interaction (selecting difficulty)
-    # TODO: allow selection with movement keys and reveal keys
     while True:
         try:
             key = win.getkey(0, 0)
@@ -986,37 +1013,54 @@ def splash(win: curses.window, config: dict) -> None:
             key = curses.ERR
         if key in config["CONTROLS"].get("EXIT"):
             raise SystemExit(0)
+        if key in config['CONTROLS'].get('UP'):
+            menu_cursor = (menu_cursor - 1) % 5
+            win.clear()
+            logo(win)
+            exit_spot = display_options()
+            # DISPLAY all symbols (useful if changing themes:)
+            display_sample(win, config)
+            win.refresh()
+        if key in config['CONTROLS'].get('DOWN'):
+            menu_cursor = (menu_cursor + 1) % 5
+            win.clear()
+            logo(win)
+            exit_spot = display_options()
+            # DISPLAY all symbols (useful if changing themes:)
+            display_sample(win, config)
+            win.refresh()
         if key == 'KEY_RESIZE':
             win.clear()
             logo(win)
-
-            # DISPLAY OPTIONS
-            for diff in Difficulty:
-                win.addstr(f'[')
-                win.addstr(f'{diff.value + 1}',
-                           curses.color_pair((diff.value+1) % 8))
-                show_option(diff)
-            win.addstr('\n')
+            exit_spot = display_options()
 
             # DISPLAY all symbols (useful if changing themes:)
             display_sample(win, config)
             win.refresh()
-        if key == '1':
+        if (key == '1' or
+                (menu_cursor == 0
+                 and key in config['CONTROLS'].get('REVEAL'))):
             board = Board(int(beginner_width), int(beginner_height),
                           float(beginner_ratio), Difficulty.BEGINNER,
                           config, win)
             break
-        elif key == '2':
+        elif (key == '2' or
+                (menu_cursor == 1
+                 and key in config['CONTROLS'].get('REVEAL'))):
             board = Board(int(intermediate_width), int(intermediate_height),
                           float(intermediate_ratio), Difficulty.INTERMEDIATE,
                           config, win)
             break
-        elif key == '3':
+        elif (key == '3' or
+                (menu_cursor == 2
+                 and key in config['CONTROLS'].get('REVEAL'))):
             board = Board(int(expert_width), int(expert_height),
                           float(expert_ratio), Difficulty.EXPERT,
                           config, win)
             break
-        elif key == '4':
+        elif (key == '4' or
+                (menu_cursor == 3
+                 and key in config['CONTROLS'].get('REVEAL'))):
             min_width = config["SETUP"]['MIN_WIDTH']
             min_height = config["SETUP"]['MIN_HEIGHT']
             max_width = config["SETUP"]['MAX_WIDTH']
@@ -1072,7 +1116,9 @@ def splash(win: curses.window, config: dict) -> None:
                           float(custom_ratio), Difficulty.CUSTOM,
                           config, win)
             break
-        elif key == '5':
+        elif (key == '5' or
+                (menu_cursor == 4
+                 and key in config['CONTROLS'].get('REVEAL'))):
             if not config['SETUP']['NO_FLASH']:
                 win.addstr(exit_spot[0], exit_spot[1], config['LOOK'][
                     'SYMBOLS']['MINE'])
