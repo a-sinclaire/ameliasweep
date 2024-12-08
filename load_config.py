@@ -43,37 +43,22 @@ def generate_new_config() -> dict:
 
 
 def default_config() -> dict:
-    return {'CONTROLS': {'KEYBOARD': {'LEFT': 'KEY_LEFT',
-                                      'RIGHT': 'KEY_RIGHT',
-                                      'UP': 'KEY_UP',
-                                      'DOWN': 'KEY_DOWN',
-                                      'REVEAL': ' ',
-                                      'FLAG': 'f',
-                                      'RESET': 'r',
-                                      'HOME': 'KEY_HOME',
-                                      'END': 'KEY_END',
-                                      'CEILING': 'KEY_PPAGE',
-                                      'FLOOR': 'KEY_NPAGE',
-                                      'HELP': 'h',
-                                      'HIGHSCORES': 'p',
-                                      'MENU': 'm',
-                                      'EXIT': 'q'
-                                      },
-                         'MOUSE': {'LEFT': None,
-                                   'RIGHT': None,
-                                   'UP': None,
-                                   'DOWN': None,
-                                   'REVEAL': 'BUTTON1_CLICKED',
-                                   'FLAG': 'BUTTON3_CLICKED',
-                                   'RESET': None,
-                                   'HOME': None,
-                                   'END': None,
-                                   'CEILING': None,
-                                   'FLOOR': None,
-                                   'HELP': None,
-                                   'HIGHSCORES': None,
-                                   'MENU': None,
-                                   'EXIT': None}},
+    return {'CONTROLS': {'LEFT': ['KEY_LEFT'],
+                         'RIGHT': ['KEY_RIGHT'],
+                         'UP': ['KEY_UP'],
+                         'DOWN': ['KEY_DOWN'],
+                         'REVEAL': [' ', '\n', 'BUTTON1_CLICKED'],
+                         'FLAG': ['f', 'BUTTON3_CLICKED'],
+                         'RESET': ['r'],
+                         'HOME': ['KEY_HOME'],
+                         'END': ['KEY_END'],
+                         'CEILING': ['KEY_PPAGE'],
+                         'FLOOR': ['KEY_NPAGE'],
+                         'HELP': ['h'],
+                         'HIGHSCORES': ['p'],
+                         'MENU': ['m'],
+                         'EXIT': ['q']
+                         },
             'SETUP': {'NO_FLASH': False,
                       'WRAP_AROUND': True,
                       'MIN_WIDTH': 2,
@@ -139,16 +124,9 @@ def initialize_structure(config: dict) -> dict:
 
     if not config.get('CONTROLS'):
         config['CONTROLS'] = {}
-    if not config['CONTROLS'].get('KEYBOARD'):
-        config['CONTROLS']['KEYBOARD'] = {}
-    if not config['CONTROLS'].get('MOUSE'):
-        config['CONTROLS']['MOUSE'] = {}
-    for k_n, k_v in hard_coded['CONTROLS']['KEYBOARD'].items():
-        if config['CONTROLS']['KEYBOARD'].get(k_n) is None:
-            config['CONTROLS']['KEYBOARD'][k_n] = None
-    for k_n, k_v in hard_coded['CONTROLS']['MOUSE'].items():
-        if config['CONTROLS']['MOUSE'].get(k_n) is None:
-            config['CONTROLS']['MOUSE'][k_n] = None
+    for k_n, k_v in hard_coded['CONTROLS'].items():
+        if config['CONTROLS'].get(k_n) is None:
+            config['CONTROLS'][k_n] = None
 
     if not config.get('SETUP'):
         config['SETUP'] = {}
@@ -209,10 +187,8 @@ def fill_uninitialized_values(config: dict) -> dict:
     always_set = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'REVEAL', 'FLAG', 'RESET',
                   'HELP', 'MENU', 'EXIT']
     for k in always_set:
-        if config['CONTROLS']['KEYBOARD'].get(k) is None \
-                and config['CONTROLS']['MOUSE'].get(k) is None:
-            config['CONTROLS']['KEYBOARD'][k] = \
-                hard_coded['CONTROLS']['KEYBOARD'][k]
+        if config['CONTROLS'].get(k) is None:
+            config['CONTROLS'][k] = hard_coded['CONTROLS'][k]
 
     # adding hardcoded values for setup if none are specified
     hard_coded_setup = hard_coded['SETUP']
@@ -264,15 +240,19 @@ def fill_uninitialized_values(config: dict) -> dict:
 
 def type_check_values(config: dict):
     # CONTROLS
-    for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
-        if not isinstance(k_v, str) and k_v is not None:
-            raise TypeError(f'Config for CONTROLS:KEYBOARD:{k_n}'
-                            f' must be of type string.')
-
-    for k_n, k_v in config['CONTROLS']['MOUSE'].items():
-        if not isinstance(k_v, str) and k_v is not None:
-            raise TypeError(f'Config for CONTROLS:MOUSE:{k_n}'
-                            f' must be of type string.')
+    for k_n, k_v in config['CONTROLS'].items():
+        if k_v is None:
+            continue
+        if not isinstance(k_v, list):
+            raise TypeError(f'Config for CONTROLS:{k_n}'
+                            f' must be of type list.')
+        else:
+            for idx, i in enumerate(config['CONTROLS'][k_n]):
+                if i is None:
+                    continue
+                if not isinstance(i, str):
+                    raise TypeError(f'Config for CONTROLS:{k_n}[{idx}]'
+                                    f' must be of type str.')
 
     # SETUP
     if (not isinstance(config['SETUP']['NO_FLASH'], bool)
@@ -370,26 +350,23 @@ def type_check_values(config: dict):
 
 def value_check_values(config: dict):
     # CONTROLS
-    for k_n, k_v in config['CONTROLS']['KEYBOARD'].items():
+    for k_n, k_v in config['CONTROLS'].items():
         if k_v is None:
             continue
-        if k_v in (r' `1234567890-=qwertyuiop[]\asdfghjkl;zxcvbnm,./~!@#$%^&*'
-                   r'()_+QWERTYUIOP{}|ASDFGHJKL:"ZXCVBNM<>?') + "'":
-            continue
-        try:
-            getattr(curses, str(k_v))
-        except AttributeError:
-            raise ValueError(f'{k_v} is not an acceptable for'
-                             f' CONTROLS:KEYBOARD:{k_n}.')
-
-    for k_n, k_v in config['CONTROLS']['MOUSE'].items():
-        if k_v is None:
-            continue
-        try:
-            getattr(curses, str(k_v))
-        except AttributeError:
-            raise ValueError(f'{k_v} is not an acceptable for'
-                             f' CONTROLS:MOUSE:{k_n}.')
+        if isinstance(k_v, list):
+            for idx, i in enumerate(config['CONTROLS'][k_n]):
+                if i is None:
+                    continue
+                if len(i) == 1 and i in ((r' `1234567890-=qwertyuiop[]\asdfgh'
+                                          r'jkl;zxcvbnm,./~!@#$%^&*()_+QWERTY'
+                                          r'UIOP{}|ASDFGHJKL:"ZXCVBNM<>?')
+                                         + "'\n"):
+                    continue
+                try:
+                    getattr(curses, str(i))
+                except AttributeError:
+                    raise ValueError(f'{i} is not acceptable for'
+                                     f' CONTROLS:{k_n}[{idx}].')
 
     # SETUP
     if (config['SETUP']['MIN_WIDTH'] is not None
