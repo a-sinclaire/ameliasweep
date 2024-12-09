@@ -15,10 +15,12 @@ import load_highscore
 
 # TODO:
 # Features:
+# no 50/50s
 
 # Bugs:
 # revert back to normal terminal colors on exit (wait for bug to be reproduced)
 # don't resize terminal while inputting custom settings
+# figure out how to deal with terminals that fuck the color up? idk.
 
 # Other:
 # make script to test mouse buttons, like done for keyboard in readme.
@@ -197,6 +199,29 @@ class Board:
                 total += self.real_board[loc[0]][loc[1]] == Cell.MINE
         return total
 
+    def first_empty(self, locations: [(int, int)]) -> (int, int):
+        for rid, row in enumerate(self.real_board):
+            for cid, cell in enumerate(row):
+                if (cell == Cell.BLANK
+                        and (rid, cid) not in locations):
+                    return rid, cid
+        raise Exception('No where to move mines to!')
+
+    def open_opening(self) -> None:
+        # move all mines in adjacent squares
+        locations = []
+        for n_r, n_c in Board.neighbors:
+            r = n_r + self.cursor[0]
+            c = n_c + self.cursor[1]
+            locations.append((r, c))
+        locations.append(self.cursor)
+        for r, c in locations:
+            if self.in_bounds((r, c)):
+                if self.real_board[r][c] == Cell.MINE:
+                    self.real_board[r][c] = Cell.BLANK
+                    ro, co = self.first_empty(locations)
+                    self.real_board[ro][co] = Cell.MINE
+
     def populate(self) -> None:
         # set mines
         choices = [x for x in self.locations if x != self.cursor]
@@ -207,6 +232,9 @@ class Board:
         else:
             for m_row, m_col in self.locations:
                 self.real_board[m_row][m_col] = Cell.MINE
+
+        if self.config['SETUP']['OPEN_START']:
+            self.open_opening()
 
         # populate numbers
         for loc in self.locations:
@@ -364,7 +392,7 @@ class Board:
         count = 0
         for n_r, n_c in Board.neighbors:
             if (self.in_bounds((n_r + row, n_c + col))
-               and self.my_board[n_r + row][n_c + col] == Cell.FLAG):
+                    and self.my_board[n_r + row][n_c + col] == Cell.FLAG):
                 count += 1
         return count
 
@@ -398,7 +426,8 @@ class Board:
                 for n in Board.neighbors:
                     self.cursor = [sum(x) for x in zip((row, col), n)]
                     if (self.in_bounds(self.cursor)
-                        and self.my_board[self.cursor[0]][self.cursor[1]] !=
+                            and self.my_board[self.cursor[0]][
+                                self.cursor[1]] !=
                             Cell.FLAG):
                         self.reveal(auto=True)
                 self.cursor = temp
