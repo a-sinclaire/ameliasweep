@@ -15,14 +15,17 @@ import load_highscore
 
 # TODO:
 # Features:
-# no 50/50s
+# no 50/50s / solveable
+# ability to change bracket color
 
 # Bugs:
+# recenter timer
 # revert back to normal terminal colors on exit (wait for bug to be reproduced)
 # don't resize terminal while inputting custom settings
 # figure out how to deal with terminals that fuck the color up? idk.
 
 # Other:
+# make refresh less egregious if possible?
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
@@ -437,6 +440,10 @@ class Board:
                 self.cursor = temp
 
         if self.my_board[row][col] == Cell.OPENED:
+            return
+
+        if (self.config['SETUP']['LOCK_FLAGS']
+            and self.my_board[row][col] == Cell.FLAG):
             return
 
         if self.real_board[row][col] == Cell.MINE:

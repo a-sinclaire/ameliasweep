@@ -61,6 +61,7 @@ def default_config() -> dict:
                          },
             'SETUP': {'OPEN_START': False,
                       'CHORDING': True,
+                      'LOCK_FLAGS': True,
                       'NO_FLASH': False,
                       'WRAP_AROUND': True,
                       'MIN_WIDTH': 2,
@@ -205,6 +206,8 @@ def fill_uninitialized_values(config: dict) -> dict:
         config['SETUP']['OPEN_START'] = hard_coded['SETUP']['OPEN_START']
     if config['SETUP'].get('CHORDING') is None:
         config['SETUP']['CHORDING'] = hard_coded['SETUP']['CHORDING']
+    if config['SETUP'].get('LOCK_FLAGS') is None:
+        config['SETUP']['LOCK_FLAGS'] = hard_coded['SETUP']['LOCK_FLAGS']
     if config['SETUP'].get('NO_FLASH') is None:
         config['SETUP']['NO_FLASH'] = hard_coded['SETUP']['NO_FLASH']
     if config['SETUP'].get('WRAP_AROUND') is None:
@@ -274,6 +277,9 @@ def type_check_values(config: dict):
     if (not isinstance(config['SETUP']['CHORDING'], bool)
             and config['SETUP']['CHORDING'] is not None):
         raise TypeError(f'Config for SETUP:CHORDING must be of type bool.')
+    if (not isinstance(config['SETUP']['LOCK_FLAGS'], bool)
+            and config['SETUP']['LOCK_FLAGS'] is not None):
+        raise TypeError(f'Config for SETUP:LOCK_FLAGS must be of type bool.')
     if (not isinstance(config['SETUP']['NO_FLASH'], bool)
             and config['SETUP']['NO_FLASH'] is not None):
         raise TypeError(f'Config for SETUP:NO_FLASH must be of type bool.')
