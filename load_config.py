@@ -104,12 +104,13 @@ def default_config() -> dict:
                                             'SIX': 6,
                                             'SEVEN': 8,
                                             'EIGHT': 7,
-                                            'MINE': None,
-                                            'FLAG': None,
-                                            'UNOPENED': None,
+                                            'MINE': 7,
+                                            'FLAG': 7,
+                                            'UNOPENED': 8,
                                             'SELECTOR': 3,
                                             'LOSE': 1,
-                                            'WIN': 2},
+                                            'WIN': 2,
+                                            'BRACKETS': 8},
                                 # https://lospec.com/palette-list/sweetie-16
                                 'RGB': {'BG': '#1a1c2c',
                                         'FG': '#f4f4f4',
@@ -121,12 +122,13 @@ def default_config() -> dict:
                                         'SIX': '#257179',
                                         'SEVEN': '#566c86',
                                         'EIGHT': '#94b0c2',
-                                        'MINE': None,
-                                        'FLAG': None,
-                                        'UNOPENED': None,
+                                        'MINE': '#f4f4f4',
+                                        'FLAG': '#f4f4f4',
+                                        'UNOPENED': '#566c86',
                                         'SELECTOR': '#ffcd75',
                                         'LOSE': '#b13e53',
-                                        'WIN': '#a7f070'}}}}
+                                        'WIN': '#a7f070',
+                                        'BRACKETS': '#333c57'}}}}
 
 
 def initialize_structure(config: dict) -> dict:

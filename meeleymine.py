@@ -16,7 +16,6 @@ import load_highscore
 # TODO:
 # Features:
 # no 50/50s / solveable
-# ability to change bracket color
 
 # Bugs:
 # recenter timer
@@ -115,7 +114,8 @@ class Board:
                  'LOSE': 13,
                  'WIN': 14,
                  'BG': 15,
-                 'FG': 16}
+                 'FG': 16,
+                 'BRACKETS': 17}
 
     def __init__(self, width: int, height: int, mine_ratio: float,
                  difficulty: Difficulty, config: dict,
@@ -604,9 +604,9 @@ class Board:
                         self.win.addstr(']', win_format)
                         continue
                     # otherwise normal cell display
-                    self.win.addstr('[')
+                    self.win.addstr('[', curses.color_pair(Board.str_to_id['BRACKETS']))
                     cell.display(self.win, self.symbols)
-                    self.win.addstr(']')
+                    self.win.addstr(']', curses.color_pair(Board.str_to_id['BRACKETS']))
                 self.win.addstr('\n')
             self.win.addstr('\n')
 
@@ -962,9 +962,9 @@ def display_sample(win: curses.window, config: dict) -> None:
     if term_width > len(max(out1.split('\n'), key=len)):
         for row in display:
             for cell in row:
-                win.addstr('[')
+                win.addstr('[', curses.color_pair(Board.str_to_id['BRACKETS']))
                 cell.display(win, symbols)
-                win.addstr(']')
+                win.addstr(']', curses.color_pair(Board.str_to_id['BRACKETS']))
             win.addstr('\n')
         return
     out2 = ''
@@ -1033,7 +1033,7 @@ def splash(win: curses.window, config: dict) -> None:
             (f'{d.name:<{spaces}} ({w}x{h}) | {r:.2%}\n', False, True, True))
         options.append(
             (f'{d.name:<{spaces}} ({w}x{h})\n', False, True, False))
-        options.append((f'] {d.name:<{spaces}} | HS: {name} {score}\n', True,
+        options.append((f'{d.name:<{spaces}} | HS: {name} {score}\n', True,
                         False, False))
         options.append(
             (f'{d.name:<{spaces}} | HS: {score}\n', True, False, False))
@@ -1076,25 +1076,25 @@ def splash(win: curses.window, config: dict) -> None:
             if diff.value == menu_cursor:
                 win.addstr(f'[', selector)
             else:
-                win.addstr(f'[')
+                win.addstr(f'[', curses.color_pair(Board.str_to_id['BRACKETS']))
             win.addstr(f'{diff.value + 1}', curses.color_pair((diff.value+1) % 8))
             if diff.value == menu_cursor:
                 win.addstr(f'] ', selector)
             else:
-                win.addstr(f'] ')
+                win.addstr(f'] ', curses.color_pair(Board.str_to_id['BRACKETS']))
             show_option(diff)
         win.addstr('\n')
         if menu_cursor == 4:
             win.addstr(f'[', selector)
         else:
-            win.addstr(f'[')
+            win.addstr(f'[', curses.color_pair(Board.str_to_id['BRACKETS']))
         exit_spot = win.getyx()
         win.addstr(f'5', curses.color_pair((len(
             Difficulty) + 1) % 8))
         if menu_cursor == 4:
             win.addstr(f'] ', selector)
         else:
-            win.addstr(f'] ')
+            win.addstr(f'] ', curses.color_pair(Board.str_to_id['BRACKETS']))
         win.addstr(f'Exit\n\n')
         return exit_spot
     exit_spot = display_options()
