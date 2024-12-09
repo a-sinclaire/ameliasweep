@@ -14,17 +14,17 @@ import load_highscore
 
 
 # TODO:
-# remaining mine count
-# remove walrus
+# Features:
 
+# Bugs:
+# revert back to normal terminal colors on exit (wait for bug to be reproduced)
+# don't resize terminal while inputting custom settings
+
+# Other:
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
 # load games from game_history file
-
-# should I display number of mines?
-# revert back to normal terminal colors on exit (wait for bug to be reproduced)
-# bug: dont resize terminal while inputting custom settings
 
 # Stretch Goals:
 # make mouse work for menu selection
@@ -360,7 +360,14 @@ class Board:
         # write out game:
         self.write_game()
 
-    def reveal(self) -> None:
+    def surrounding_flags(self, row: int, col: int) -> int:
+        count = 0
+        for n_r, n_c in Board.neighbors:
+            if self.my_board[n_r + row][n_c + col] == Cell.FLAG:
+                count += 1
+        return count
+
+    def reveal(self, auto: bool = False) -> None:
         if not self.state == GameState.PLAYING:
             return
         if not self.in_bounds(self.cursor):
@@ -375,6 +382,24 @@ class Board:
         if isinstance(self.cursor, tuple):
             self.moves.append(self.cursor)
 
+        # chording
+        if (Cell.ONE.value <= self.real_board[row][col].value <=
+                Cell.EIGHT.value
+                and self.my_board[row][col] == Cell.OPENED
+                and not auto):
+            if (self.surrounding_flags(row, col)
+                    == self.real_board[row][col].value):
+                # chord
+                # recursively reveal 8 surrounding cells
+                # * that are not flags
+                temp = self.cursor
+                for n in Board.neighbors:
+                    self.cursor = [sum(x) for x in zip((row, col), n)]
+                    if (self.my_board[self.cursor[0]][self.cursor[1]] !=
+                            Cell.FLAG):
+                        self.reveal(auto=True)
+                self.cursor = temp
+
         if self.my_board[row][col] == Cell.OPENED:
             return
 
@@ -388,7 +413,7 @@ class Board:
             temp = self.cursor
             for n in Board.neighbors:
                 self.cursor = [sum(x) for x in zip((row, col), n)]
-                self.reveal()
+                self.reveal(auto=True)
             self.cursor = temp
         else:
             self.my_board[row][col] = Cell.OPENED
