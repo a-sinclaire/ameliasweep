@@ -60,6 +60,7 @@ def default_config() -> dict:
                          'EXIT': ['q']
                          },
             'SETUP': {'OPEN_START': False,
+                      'NO_GUESSING': False,
                       'CHORDING': True,
                       'LOCK_FLAGS': True,
                       'NO_FLASH': False,
@@ -206,6 +207,8 @@ def fill_uninitialized_values(config: dict) -> dict:
     hard_coded_setup = hard_coded['SETUP']
     if config['SETUP'].get('OPEN_START') is None:
         config['SETUP']['OPEN_START'] = hard_coded['SETUP']['OPEN_START']
+    if config['SETUP'].get('NO_GUESSING') is None:
+        config['SETUP']['NO_GUESSING'] = hard_coded['SETUP']['NO_GUESSING']
     if config['SETUP'].get('CHORDING') is None:
         config['SETUP']['CHORDING'] = hard_coded['SETUP']['CHORDING']
     if config['SETUP'].get('LOCK_FLAGS') is None:
@@ -276,6 +279,9 @@ def type_check_values(config: dict):
     if (not isinstance(config['SETUP']['OPEN_START'], bool)
             and config['SETUP']['OPEN_START'] is not None):
         raise TypeError(f'Config for SETUP:OPEN_START must be of type bool.')
+    if (not isinstance(config['SETUP']['NO_GUESSING'], bool)
+            and config['SETUP']['NO_GUESSING'] is not None):
+        raise TypeError(f'Config for SETUP:NO_GUESSING must be of type bool.')
     if (not isinstance(config['SETUP']['CHORDING'], bool)
             and config['SETUP']['CHORDING'] is not None):
         raise TypeError(f'Config for SETUP:CHORDING must be of type bool.')

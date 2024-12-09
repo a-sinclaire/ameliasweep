@@ -11,14 +11,16 @@ from typing import Any, List
 
 import load_config
 import load_highscore
+from solver import solvable
 
 
 # TODO:
 # Features:
 # no 50/50s / solvable
+# lives system or time penalty (forgiving mode)
+# peaceful mode (bombs dont kill you + no timer)
 
 # Bugs:
-# recenter timer
 # revert back to normal terminal colors on exit (wait for bug to be reproduced)
 # don't resize terminal while inputting custom settings
 # figure out how to deal with terminals that fuck the color up? idk.
@@ -411,6 +413,12 @@ class Board:
 
         if self.is_first_click:
             self.populate()
+            if self.config['SETUP']['NO_GUESSING']:
+                if not solvable(self):
+                    cur = self.cursor
+                    self.reset()
+                    self.cursor = cur
+                    self.populate()
             self.is_first_click = False
 
         row, col = self.cursor
