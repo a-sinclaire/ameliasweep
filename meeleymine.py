@@ -678,7 +678,7 @@ def init_colors(win: curses.window, colors: {str: dict}) -> None:
         for i in range(0, curses.COLORS):
             try:
                 curses.init_pair(i + 1, i, -1)
-            except ValueError:
+            except (ValueError, curses.error):
                 # sometimes error on Windows? idk. let's just ignore it
                 pass
 
@@ -707,29 +707,45 @@ def init_colors(win: curses.window, colors: {str: dict}) -> None:
             else:
                 bg = defaults['BG']
                 fg = defaults['FG']
-            curses.init_pair(str_to_id['BG'], fg, bg)
-            win.bkgd(' ', curses.color_pair(str_to_id['BG']))
+            try:
+                curses.init_pair(str_to_id['BG'], fg, bg)
+                win.bkgd(' ', curses.color_pair(str_to_id['BG']))
+            except curses.error:
+                pass
+
 
             for idx, (c_n, c_v) in enumerate(rgbs.items()):
                 if c_n == 'BG' or c_n == 'FG':
                     continue
                 my_color = defaults.get(c_n)
                 if c_v is None:
-                    curses.init_pair(str_to_id[c_n], my_color, bg)
+                    try:
+                        curses.init_pair(str_to_id[c_n], my_color, bg)
+                    except curses.error:
+                        pass
                     continue
 
                 # noinspection PyArgumentList
                 curses.init_color(str_to_id[c_n], *c_v)
-                curses.init_pair(str_to_id[c_n], str_to_id[c_n], bg)
+                try:
+                    curses.init_pair(str_to_id[c_n], str_to_id[c_n], bg)
+                except curses.error:
+                    pass
         else:
             bg = defaults['BG']
-            curses.init_pair(str_to_id['BG'], defaults['FG'],
+            try:
+                curses.init_pair(str_to_id['BG'], defaults['FG'],
                              defaults['BG'])
-            win.bkgd(' ', curses.color_pair(str_to_id['BG']))
+                win.bkgd(' ', curses.color_pair(str_to_id['BG']))
+            except curses.error:
+                pass
             for idx, (c_n, c_v) in enumerate(defaults.items()):
                 if c_n == 'BG' or c_n == 'FG':
                     continue
-                curses.init_pair(str_to_id[c_n], c_v, bg)
+                try:
+                    curses.init_pair(str_to_id[c_n], c_v, bg)
+                except curses.error:
+                    pass
 
 
 class _Sentinel:
