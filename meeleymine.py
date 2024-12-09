@@ -562,8 +562,11 @@ class Board:
 
         term_height, term_width = self.win.getmaxyx()
         remaining = self.n_mines - self.count_flags()
-        self.win.addstr(f'Remaining: {remaining}')
+        self.win.addstr(f'Count: {remaining}|')
+        remaining_size = (len(str(remaining)) + 8)
         if term_width > self.full_width:
+            if self.full_width - remaining_size < 0:
+                remaining_size = 0
             # show timer next
             if self.start_time is not None and self.state == GameState.PLAYING:
                 _time = Board.zero_time + self.cum_time + (
@@ -575,8 +578,9 @@ class Board:
                 _time = Board.zero_time + self.cum_time
 
             title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
-            time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-            self.win.addstr(f'{time_str:^{self.full_width}}\n')
+            time_str = f'|{_time:%H:%M:%S.%f}'[:-4]
+            self.win.addstr(f''
+                            f'{time_str:>{self.full_width - remaining_size}}\n')
 
             # display board
             for rid, row in enumerate(self.my_board):
@@ -627,6 +631,8 @@ class Board:
                 self.win.addstr(
                     f'{f"Press {menu_key} to return to menu.":^{self.full_width}}\n')
         else:
+            if self.full_width - remaining_size < 0:
+                remaining_size = 0
             # show timer next
             if self.start_time is not None and self.state == GameState.PLAYING:
                 _time = Board.zero_time + self.cum_time + (
@@ -638,8 +644,8 @@ class Board:
                 _time = Board.zero_time + self.cum_time
 
             title_format = curses.A_BOLD | curses.A_REVERSE | curses.A_BLINK
-            time_str = f'{_time:%H:%M:%S.%f}'[:-4]
-            self.win.addstr(f'{time_str:^{self.width}}\n')
+            time_str = f'|{_time:%H:%M:%S.%f}'[:-4]
+            self.win.addstr(f'{time_str:>{self.width - remaining_size}}\n')
 
             # display board
             for rid, row in enumerate(self.my_board):
