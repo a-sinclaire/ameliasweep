@@ -363,7 +363,8 @@ class Board:
     def surrounding_flags(self, row: int, col: int) -> int:
         count = 0
         for n_r, n_c in Board.neighbors:
-            if self.my_board[n_r + row][n_c + col] == Cell.FLAG:
+            if (self.in_bounds((n_r + row, n_c + col))
+               and self.my_board[n_r + row][n_c + col] == Cell.FLAG):
                 count += 1
         return count
 
@@ -383,7 +384,8 @@ class Board:
             self.moves.append(self.cursor)
 
         # chording
-        if (Cell.ONE.value <= self.real_board[row][col].value <=
+        if (self.config['SETUP']['CHORDING']
+                and Cell.ONE.value <= self.real_board[row][col].value <=
                 Cell.EIGHT.value
                 and self.my_board[row][col] == Cell.OPENED
                 and not auto):
@@ -395,7 +397,8 @@ class Board:
                 temp = self.cursor
                 for n in Board.neighbors:
                     self.cursor = [sum(x) for x in zip((row, col), n)]
-                    if (self.my_board[self.cursor[0]][self.cursor[1]] !=
+                    if (self.in_bounds(self.cursor)
+                        and self.my_board[self.cursor[0]][self.cursor[1]] !=
                             Cell.FLAG):
                         self.reveal(auto=True)
                 self.cursor = temp

@@ -59,7 +59,8 @@ def default_config() -> dict:
                          'MENU': ['m'],
                          'EXIT': ['q']
                          },
-            'SETUP': {'NO_FLASH': False,
+            'SETUP': {'CHORDING': True,
+                      'NO_FLASH': False,
                       'WRAP_AROUND': True,
                       'MIN_WIDTH': 2,
                       'MIN_HEIGHT': 2,
@@ -199,6 +200,8 @@ def fill_uninitialized_values(config: dict) -> dict:
 
     # adding hardcoded values for setup if none are specified
     hard_coded_setup = hard_coded['SETUP']
+    if config['SETUP'].get('CHORDING') is None:
+        config['SETUP']['CHORDING'] = hard_coded['SETUP']['CHORDING']
     if config['SETUP'].get('NO_FLASH') is None:
         config['SETUP']['NO_FLASH'] = hard_coded['SETUP']['NO_FLASH']
     if config['SETUP'].get('WRAP_AROUND') is None:
@@ -262,6 +265,9 @@ def type_check_values(config: dict):
                                     f' must be of type str.')
 
     # SETUP
+    if (not isinstance(config['SETUP']['CHORDING'], bool)
+            and config['SETUP']['CHORDING'] is not None):
+        raise TypeError(f'Config for SETUP:CHORDING must be of type bool.')
     if (not isinstance(config['SETUP']['NO_FLASH'], bool)
             and config['SETUP']['NO_FLASH'] is not None):
         raise TypeError(f'Config for SETUP:NO_FLASH must be of type bool.')
