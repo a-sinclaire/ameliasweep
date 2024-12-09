@@ -27,6 +27,7 @@ import load_highscore
 # make those scripts a bit better?
 # make readme nicer
 # load games from game_history file
+# change config NO_FLASH to FLASH
 
 # Stretch Goals:
 # make mouse work for menu selection
@@ -218,9 +219,11 @@ class Board:
         for r, c in locations:
             if self.in_bounds((r, c)):
                 if self.real_board[r][c] == Cell.MINE:
+                    self.mines.remove((r, c))
                     self.real_board[r][c] = Cell.BLANK
                     ro, co = self.first_empty(locations)
                     self.real_board[ro][co] = Cell.MINE
+                    self.mines.append((ro, co))
 
     def populate(self) -> None:
         # set mines
@@ -231,6 +234,7 @@ class Board:
                 self.real_board[m_row][m_col] = Cell.MINE
         else:
             for m_row, m_col in self.locations:
+                self.mines.append((m_row, m_col))
                 self.real_board[m_row][m_col] = Cell.MINE
 
         if self.config['SETUP']['OPEN_START']:
