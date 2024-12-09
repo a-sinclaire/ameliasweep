@@ -82,10 +82,17 @@ import curses
 
 
 def main(stdscr):
+    curses.mousemask(curses.ALL_MOUSE_EVENTS)
     while True:
         key = stdscr.getkey()
         stdscr.clear()
-        stdscr.addstr(key)
+        if key == 'KEY_MOUSE':
+            _, mx, my, _, bstate = curses.getmouse()
+            for key, value in curses.__dict__.items():
+                if bstate == value:
+                    stdscr.addstr(str(key) + ' ')
+        else:
+            stdscr.addstr(key)
         stdscr.refresh()
 
 
