@@ -15,7 +15,7 @@ import load_highscore
 
 # TODO:
 # Features:
-# no 50/50s / solveable
+# no 50/50s / solvable
 
 # Bugs:
 # recenter timer
@@ -611,16 +611,21 @@ class Board:
             self.win.addstr('\n')
 
             reset_key = control_str(self.config["CONTROLS"]["RESET"])
+            menu_key = control_str(self.config["CONTROLS"]["MENU"])
             if self.state == GameState.LOST:
                 self.win.addstr(f'{"YOU LOSE!":^{self.full_width}}\n',
                                 title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
+                self.win.addstr(
+                    f'{f"Press {menu_key} to return to menu.":^{self.full_width}}\n')
             elif self.state == GameState.WON:
                 self.win.addstr(f'{"YOU WIN!":^{self.full_width}}\n',
                                 title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.full_width}}\n')
+                self.win.addstr(
+                    f'{f"Press {menu_key} to return to menu.":^{self.full_width}}\n')
         else:
             # show timer next
             if self.start_time is not None and self.state == GameState.PLAYING:
@@ -661,16 +666,20 @@ class Board:
             self.win.addstr('\n')
 
             reset_key = control_str(self.config["CONTROLS"]["RESET"])
+            menu_key = control_str(self.config["CONTROLS"]["MENU"])
             if self.state == GameState.LOST:
                 self.win.addstr(f'{"YOU LOSE!":^{self.width}}\n',
                                 title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.width}}\n')
+                self.win.addstr(f'{f"Press {menu_key} to return to menu.":^{self.width}}\n')
             elif self.state == GameState.WON:
                 self.win.addstr(f'{"YOU WIN!":^{self.width}}\n',
                                 title_format)
                 self.win.addstr(
                     f'{f"Press {reset_key} to reset.":^{self.width}}\n')
+                self.win.addstr(
+                    f'{f"Press {menu_key} to return to menu.":^{self.width}}\n')
 
 
 def init_colors(win: curses.window, colors: {str: dict}) -> None:
