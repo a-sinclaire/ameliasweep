@@ -443,6 +443,13 @@ class Board:
         self.win.nodelay(True)
         self.pause()
 
+    def count_flags(self) -> int:
+        count = 0
+        for r, c in self.locations:
+            if self.my_board[r][c] == Cell.FLAG:
+                count += 1
+        return count
+
     def flag(self) -> None:
         if self.state != GameState.PLAYING:
             return
@@ -486,6 +493,8 @@ class Board:
                           | curses.A_BOLD)
 
         term_height, term_width = self.win.getmaxyx()
+        remaining = self.n_mines - self.count_flags()
+        self.win.addstr(f'Remaining: {remaining}')
         if term_width > self.full_width:
             # show timer next
             if self.start_time is not None and self.state == GameState.PLAYING:
