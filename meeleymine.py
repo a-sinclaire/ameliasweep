@@ -14,9 +14,13 @@ import load_highscore
 
 
 # TODO:
+# remaining mine count
+# remove walrus
+
 # make script to test mouse buttons, like done for keyboard in readme.
 # make those scripts a bit better?
 # make readme nicer
+# load games from game_history file
 
 # should I display number of mines?
 # revert back to normal terminal colors on exit (wait for bug to be reproduced)
@@ -611,19 +615,21 @@ def init_colors(win: curses.window, colors: {str: dict}) -> None:
         if curses.can_change_color():
             # use rgb values
             # get BG color
-            if (bg_color := rgbs.get('BG')) and (fg_color := rgbs.get('FG')):
+            bg_color = rgbs.get('BG')
+            fg_color = rgbs.get('FG')
+            if bg_color and fg_color:
                 # noinspection PyArgumentList
                 curses.init_color(str_to_id['BG'], *bg_color)
                 bg = str_to_id['BG']
                 # noinspection PyArgumentList
                 curses.init_color(str_to_id['FG'], *fg_color)
                 fg = str_to_id['FG']
-            elif bg_color := rgbs.get('BG'):
+            elif bg_color:
                 # noinspection PyArgumentList
                 curses.init_color(str_to_id['BG'], *bg_color)
                 bg = str_to_id['BG']
                 fg = defaults['FG']
-            elif fg_color := rgbs.get('FG'):
+            elif fg_color:
                 bg = defaults['BG']
                 # noinspection PyArgumentList
                 curses.init_color(str_to_id['FG'], *fg_color)
