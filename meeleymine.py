@@ -1221,7 +1221,8 @@ def main_loop(win: curses.window, board: Board, config: dict) -> None:
                 win.noutrefresh()
                 win.refresh()
             continue
-        if board.state != GameState.PAUSED:
+        if board.state != GameState.PAUSED or key == curses.KEY_RESIZE:
+            term_height, term_width = win.getmaxyx()
             win.clear()
             board.display()
             if term_width > board.full_width:
